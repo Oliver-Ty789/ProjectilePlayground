@@ -9,6 +9,8 @@ namespace ProjectilePlayground
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
 
+        ScaledSprite sprite;
+
         public Game1()
         {
             _graphics = new GraphicsDeviceManager(this);
@@ -28,6 +30,9 @@ namespace ProjectilePlayground
             _spriteBatch = new SpriteBatch(GraphicsDevice);
 
             // TODO: use this.Content to load your game content here
+
+            Texture2D texture = Content.Load<Texture2D>("Final_face_circle");
+            sprite = new ScaledSprite(texture, new Vector2(100, 100), 50,50);
         }
 
         protected override void Update(GameTime gameTime)
@@ -45,6 +50,12 @@ namespace ProjectilePlayground
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
             // TODO: Add your drawing code here
+
+            _spriteBatch.Begin(samplerState: SamplerState.LinearWrap);
+
+            _spriteBatch.Draw(sprite.texture, sprite.Rect, Color.White);
+
+            _spriteBatch.End();
 
             base.Draw(gameTime);
         }
