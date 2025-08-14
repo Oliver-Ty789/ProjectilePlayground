@@ -32,7 +32,7 @@ namespace ProjectilePlayground
             // TODO: use this.Content to load your game content here
 
             Texture2D texture = Content.Load<Texture2D>("Final_face_circle");
-            sprite = new ScaledSprite(texture, new Vector2(100, 100), 50,50);
+            sprite = new ScaledSprite(texture, new Vector2(100, 100), 0.2f);
         }
 
         protected override void Update(GameTime gameTime)
@@ -41,7 +41,15 @@ namespace ProjectilePlayground
                 Exit();
 
             // TODO: Add your update logic here
-            
+
+            // getting the mouse state
+
+            if (Mouse.GetState().LeftButton == ButtonState.Pressed)
+            {
+                var mousePosition = Mouse.GetState().Position.ToVector2();
+                sprite.position = mousePosition;
+            }
+
             base.Update(gameTime);
         }
 

@@ -13,20 +13,27 @@ namespace ProjectilePlayground
     {
 
 
-        public int width;
-        public int height;
+        public float scale;
 
-        public Microsoft.Xna.Framework.Rectangle Rect
+        public Microsoft.Xna.Framework.Rectangle Rect // dependent on position at time of call, better than a variable
         {
             get
             {
-                return new Microsoft.Xna.Framework.Rectangle((int)position.X, (int)position.Y, width, height);
+                return new Microsoft.Xna.Framework.Rectangle((int)position.X, 
+                    (int)position.Y, 
+                    (int)(texture.Width * scale), 
+                    (int)(texture.Height * scale));
+
             }
         }
-        public ScaledSprite(Texture2D texture, Vector2 position, int width, int height): base(texture, position)
-        { 
-            this.width = width;
-            this.height = height;
+        public ScaledSprite(Texture2D texture, Vector2 position, float scale): base(texture, position)
+        {
+            this.scale = scale;
+        }
+
+        public virtual void Update(GameTime gameTime)
+        {
+            // used to overrrided if needed in subclasses
         }
 
 
