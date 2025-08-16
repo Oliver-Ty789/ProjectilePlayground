@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
@@ -27,14 +28,31 @@ namespace ProjectilePlayground
             this.initial_angle = intial_a;
         }
 
-        public void ApplyVelocity()
+        public void ApplyVelocity(float delta)
         {
-            this.position += this.velocity;
+            this.position += this.velocity*delta;
+
         }
 
-        public override void Update(GameTime gameTime)
+        public void ApplyForces(Environment environment, float delta)
         {
-            ApplyVelocity();
+            // gravity
+            if (position.Y < 640)
+            {
+                velocity += environment.gravity * delta;
+            }
+            else
+            {
+                velocity = new Vector2(0, 0);
+            }
+        }
+
+        public void Update(GameTime gameTime, Environment environment)
+        {
+
+            float delta = (float)gameTime.ElapsedGameTime.TotalSeconds; // difference in time between frames, keeps velocity/acceleration consitent 
+            ApplyForces(environment, delta);
+            ApplyVelocity(delta);
             base.Update(gameTime);
         }
     }

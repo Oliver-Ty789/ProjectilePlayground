@@ -14,11 +14,16 @@ namespace ProjectilePlayground
 
         Projectile projectile;
 
+        Environment environment;
+
         public Game1()
         {
             _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
+            _graphics.PreferredBackBufferWidth = 1280; // Set your desired width
+            _graphics.PreferredBackBufferHeight = 720; // Set your desired height
+            _graphics.ApplyChanges();
         }
 
         protected override void Initialize()
@@ -38,7 +43,9 @@ namespace ProjectilePlayground
             Texture2D texture = Content.Load<Texture2D>("Final_face_circle");
             sprite = new ScaledSprite(texture, new Vector2(100, 100), 0.2f);
 
-            projectile = new Projectile(texture, new Vector2(10, 200), 0.75f, new Vector2(1, -1), 10, 45d);
+            projectile = new Projectile(texture, new Vector2(30, 630), 0.5f, new Vector2(250, -300), 10, 45d);
+
+            environment = new Environment(new Vector2(0,98.1f));
         }
 
         protected override void Update(GameTime gameTime)
@@ -57,7 +64,7 @@ namespace ProjectilePlayground
                 //Console.WriteLine(VectorMaths.DotProduct(new Vector2(4, 3), new Vector2(8,6)));
             }
 
-            projectile.Update(gameTime);
+            projectile.Update(gameTime, environment);
         
             base.Update(gameTime);
         }
