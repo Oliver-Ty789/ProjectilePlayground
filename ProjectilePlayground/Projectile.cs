@@ -14,6 +14,7 @@ namespace ProjectilePlayground
         public int mass;
         public Vector2 velocity;
         public double initial_angle;
+        private Vector2 Force;
         // public float C_of_D; // unimportant at this time
         //public float C_of_E;
         //public float angluar_velocity;
@@ -26,8 +27,14 @@ namespace ProjectilePlayground
             this.initial_angle = intial_a;
         }
 
+        public void ApplyVelocity()
+        {
+            this.position += this.velocity;
+        }
+
         public override void Update(GameTime gameTime)
         {
+            ApplyVelocity();
             base.Update(gameTime);
         }
     }

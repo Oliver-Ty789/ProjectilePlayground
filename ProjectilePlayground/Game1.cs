@@ -12,6 +12,8 @@ namespace ProjectilePlayground
 
         ScaledSprite sprite;
 
+        Projectile projectile;
+
         public Game1()
         {
             _graphics = new GraphicsDeviceManager(this);
@@ -35,6 +37,8 @@ namespace ProjectilePlayground
 
             Texture2D texture = Content.Load<Texture2D>("Final_face_circle");
             sprite = new ScaledSprite(texture, new Vector2(100, 100), 0.2f);
+
+            projectile = new Projectile(texture, new Vector2(10, 200), 0.75f, new Vector2(1, -1), 10, 45d);
         }
 
         protected override void Update(GameTime gameTime)
@@ -50,8 +54,10 @@ namespace ProjectilePlayground
             {
                 var mousePosition = Mouse.GetState().Position.ToVector2();
                 sprite.position = mousePosition;
-                Console.WriteLine(VectorMaths.DotProduct(new Vector2(4, 3), new Vector2(8,6)));
+                //Console.WriteLine(VectorMaths.DotProduct(new Vector2(4, 3), new Vector2(8,6)));
             }
+
+            projectile.Update(gameTime);
         
             base.Update(gameTime);
         }
@@ -64,8 +70,8 @@ namespace ProjectilePlayground
 
             _spriteBatch.Begin(samplerState: SamplerState.LinearWrap);
 
-            _spriteBatch.Draw(sprite.texture, sprite.Rect, Color.White);
-
+            //_spriteBatch.Draw(sprite.texture, sprite.Rect, Color.White);
+            _spriteBatch.Draw(projectile.texture, projectile.Rect, Color.Red);
             _spriteBatch.End();
 
             base.Draw(gameTime);
