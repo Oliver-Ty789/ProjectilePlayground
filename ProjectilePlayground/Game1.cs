@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
@@ -21,6 +22,7 @@ namespace ProjectilePlayground
         protected override void Initialize()
         {
             // TODO: Add your initialization logic here
+
 
             base.Initialize();
         }
@@ -48,8 +50,9 @@ namespace ProjectilePlayground
             {
                 var mousePosition = Mouse.GetState().Position.ToVector2();
                 sprite.position = mousePosition;
+                Console.WriteLine(VectorMaths.DotProduct(new Vector2(4, 3), new Vector2(8,6)));
             }
-
+        
             base.Update(gameTime);
         }
 
