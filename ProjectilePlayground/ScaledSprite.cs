@@ -31,9 +31,13 @@ namespace ProjectilePlayground
             this.scale = scale;
         }
 
+        public virtual void Draw(GameTime gameTime, SpriteBatch spriteBatch)
+        {
+            // used to be overrided in subclasses if needed
+        }
         public virtual void Update(GameTime gameTime)
         {
-            // used to overrrided if needed in subclasses
+            // used to be overrided if needed in subclasses
         }
 
 

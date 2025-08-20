@@ -11,23 +11,26 @@ namespace ProjectilePlayground
 {
     internal class Projectile : ScaledSprite
     {
-        public Vector2 initial_velocity;
         public int mass;
         public Vector2 velocity;
-        public double initial_angle;
+        public float initial_angle;
         private Vector2 Force;
+        public double radius;
+        public float initial_speed;
         // public float C_of_D; // unimportant at this time
         //public float C_of_E;
         //public float angluar_velocity;
 
-        public Projectile(Texture2D texture, Vector2 position, float scale, Vector2 intial_v, int mass, double intial_a) : base (texture, position, scale)
+        public Projectile(Texture2D texture, Vector2 position, float scale, float initial_s, int mass, float initial_a, double radius) : base (texture, position, scale)
         {
-            this.initial_velocity = intial_v;
             this.mass = mass;
-            this.velocity = intial_v;
-            this.initial_angle = intial_a;
-        }
+            this.initial_speed = initial_s;
+            this.initial_angle = initial_a;
+            this.radius = radius;
 
+            velocity = new Vector2((float)(initial_s * Math.Cos(initial_a * Math.PI / 180)), -(float)(initial_s * Math.Sin(initial_a * Math.PI / 180)));
+        }
+   
         public void ApplyVelocity(float delta)
         {
             this.position += this.velocity*delta;
@@ -45,6 +48,19 @@ namespace ProjectilePlayground
             {
                 velocity = new Vector2(0, 0);
             }
+        }
+
+        public float ConversionToSI()
+
+            // 1. find how many pixels in radius
+            // 2. find how many radius' make a meter
+            // 3. use that scale to find pixels to meter
+
+        {
+            double radiusP = (texture.Width * scale) /2; // finds the radius of the projectile in pixels
+            double radiusPerMeter = 1/radius; // eg if radius = 0.5 therefore there would be 2 radius' per meter
+            float pixelsToMeter = Convert.ToSingle(radiusPerMeter * radiusP);
+            return pixelsToMeter;
         }
 
         public void Update(GameTime gameTime, Environment environment)
