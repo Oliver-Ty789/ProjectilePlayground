@@ -14,22 +14,20 @@ namespace ProjectilePlayground
         private SpriteBatch _spriteBatch;
 
         private List<ScaledSprite> _sprites;
+        
+        // for waiting projectiles
+        private Queue<ScaledSprite> _spritesQueue;
+        bool queuing;
 
         Projectile projectile;
 
         Environment environment;
 
-
-
         float pixelsPerM;
-        //float pixelsPerM_s;
-        // float pixelsPerM_s_s;
-       
-
-
-
+        
         // parameters for the projectile
 
+        Texture2D texture;
         float scale;
         Vector2 startPos;
         float initial_speed;
@@ -104,7 +102,7 @@ namespace ProjectilePlayground
             angleSlider.Click += ScrollerClick;
 
             // parameters for first projectile (test)
-            Texture2D texture = Content.Load<Texture2D>("sprites/Final_face_circle");
+            texture = Content.Load<Texture2D>("sprites/Final_face_circle");
             startPos = new Vector2(30, 630);
             scale = 0.25f;
             initial_speed = 500f;
@@ -125,6 +123,10 @@ namespace ProjectilePlayground
                 angleSlider
             };
 
+            _spritesQueue = new Queue<ScaledSprite> { };
+
+            queuing = false;
+
             // TODO: use this.Content to load your game content here
 
         }
@@ -132,9 +134,9 @@ namespace ProjectilePlayground
         private void ShootButton_Click(object sender, System.EventArgs e)
         {
             var random = new Random();
-            initial_angle = (float)random.Next(10,80);
-            projectile = new Projectile(Content.Load<Texture2D>("sprites/Final_face_circle"), startPos, scale, initial_speed, mass, initial_angle, radius);
-            _sprites.Add(projectile);
+            projectile = new Projectile(texture, startPos, scale, initial_speed, mass, initial_angle, radius);
+            queuing = true;
+            _spritesQueue.Enqueue(projectile);
         }
 
 
@@ -167,7 +169,19 @@ namespace ProjectilePlayground
             {
                 sprite.Update(gameTime, environment);
             }
-        
+            
+
+            if (queuing)
+            {
+                foreach (var queuedsprite in _spritesQueue)
+                {
+                    _sprites.Add(queuedsprite);
+                }
+                _spritesQueue.Clear();
+            }
+
+
+
             base.Update(gameTime);
         }
 
@@ -179,7 +193,7 @@ namespace ProjectilePlayground
 
             _spriteBatch.Begin(samplerState: SamplerState.LinearWrap);
 
-            foreach (var sprite in _sprites.ToList<ScaledSprite>())
+            foreach (var sprite in _sprites)
             {
                 sprite.Draw(gameTime, _spriteBatch);
             }
