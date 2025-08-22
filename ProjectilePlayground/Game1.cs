@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -12,7 +13,7 @@ namespace ProjectilePlayground
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
 
-        private List<Button> _buttons;
+        private List<ScaledSprite> _sprites;
 
         Projectile projectile;
 
@@ -66,15 +67,41 @@ namespace ProjectilePlayground
             {
                 text = "SHOOT",
             };
-
+             
             shootButton.Click += ShootButton_Click;
 
-            _buttons = new List<Button>()
-            {
-                shootButton,
+            var speedSlider = new Slider(Content.Load<Texture2D>("sprites/scroller"), 
+                new Vector2(800, 400), 
+                2f, 
+                Content.Load<SpriteFont>("fonts/font"), 
+                Content.Load<Texture2D>("sprites/sliderbar"))
+            { 
+                text_scroller = "na" ,
+                text_min = "0 m/s",
+                text_max = "30 m/s",
+                text_desc = "speed",
+                index = 0,
+                maxValue = 30f
             };
 
-            // TODO: use this.Content to load your game content here
+  
+            speedSlider.Click += ScrollerClick;
+
+            var angleSlider = new Slider(Content.Load<Texture2D>("sprites/scroller"),
+                new Vector2(800, 200),
+                2f,
+                Content.Load<SpriteFont>("fonts/font"),
+                Content.Load<Texture2D>("sprites/sliderbar"))
+            {
+                text_scroller = "na",
+                text_min = "0 degrees",
+                text_max = "90 degrees",
+                text_desc = "angle",
+                index = 1,
+                maxValue = 90f,
+            };
+
+            angleSlider.Click += ScrollerClick;
 
             // parameters for first projectile (test)
             Texture2D texture = Content.Load<Texture2D>("sprites/Final_face_circle");
@@ -90,6 +117,16 @@ namespace ProjectilePlayground
             pixelsPerM = projectile.ConversionToSI();
 
             environment = new Environment(new Vector2(0, pixelsPerM* 9.81f));
+
+            _sprites = new List<ScaledSprite> { 
+                projectile,
+                shootButton,
+                speedSlider,
+                angleSlider
+            };
+
+            // TODO: use this.Content to load your game content here
+
         }
 
         private void ShootButton_Click(object sender, System.EventArgs e)
@@ -97,6 +134,26 @@ namespace ProjectilePlayground
             var random = new Random();
             initial_angle = (float)random.Next(10,80);
             projectile = new Projectile(Content.Load<Texture2D>("sprites/Final_face_circle"), startPos, scale, initial_speed, mass, initial_angle, radius);
+            _sprites.Add(projectile);
+        }
+
+
+        private void ScrollerClick(object sender, SliderClickEventArgs e)
+        {
+            switch (e.index) // sets all attributes of projectile
+            {
+                case 0:
+                    initial_speed = e.property * pixelsPerM;
+                    break;
+
+                case 1:
+                    initial_angle = e.property;
+                    break;
+
+                default:
+                    break;
+
+            }
         }
 
         protected override void Update(GameTime gameTime)
@@ -106,12 +163,10 @@ namespace ProjectilePlayground
 
             // TODO: Add your update logic here
 
-            foreach (var button in _buttons)
+            foreach (var sprite in _sprites)
             {
-                button.Update(gameTime);
+                sprite.Update(gameTime, environment);
             }
-
-            projectile.Update(gameTime, environment);
         
             base.Update(gameTime);
         }
@@ -124,13 +179,12 @@ namespace ProjectilePlayground
 
             _spriteBatch.Begin(samplerState: SamplerState.LinearWrap);
 
-            foreach (var button in _buttons)
+            foreach (var sprite in _sprites.ToList<ScaledSprite>())
             {
-                button.Draw(gameTime, _spriteBatch);
+                sprite.Draw(gameTime, _spriteBatch);
             }
-
-            //_spriteBatch.Draw(sprite.texture, sprite.Rect, Color.White);
-            _spriteBatch.Draw(projectile.texture, projectile.Rect, Color.Red);
+            
+            
             _spriteBatch.End();
 
             base.Draw(gameTime);

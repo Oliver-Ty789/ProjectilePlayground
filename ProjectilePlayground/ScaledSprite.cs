@@ -35,7 +35,7 @@ namespace ProjectilePlayground
         {
             // used to be overrided in subclasses if needed
         }
-        public virtual void Update(GameTime gameTime)
+        public virtual void Update(GameTime gameTime, Environment environment)
         {
             // used to be overrided if needed in subclasses
         }

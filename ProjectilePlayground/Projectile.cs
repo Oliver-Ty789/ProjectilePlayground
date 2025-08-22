@@ -14,7 +14,7 @@ namespace ProjectilePlayground
         public int mass;
         public Vector2 velocity;
         public float initial_angle;
-        private Vector2 Force;
+        //private Vector2 Force;
         public double radius;
         public float initial_speed;
         // public float C_of_D; // unimportant at this time
@@ -63,13 +63,19 @@ namespace ProjectilePlayground
             return pixelsToMeter;
         }
 
-        public void Update(GameTime gameTime, Environment environment)
+        public override void Draw(GameTime gameTime, SpriteBatch _spriteBatch)
+        {
+            _spriteBatch.Draw(texture, Rect, Color.White);
+            base.Draw(gameTime, _spriteBatch);
+        }
+
+        public override void Update(GameTime gameTime, Environment environment)
         {
 
             float delta = (float)gameTime.ElapsedGameTime.TotalSeconds; // difference in time between frames, keeps velocity/acceleration consitent 
             ApplyForces(environment, delta);
             ApplyVelocity(delta);
-            base.Update(gameTime);
+            base.Update(gameTime, environment);
         }
     }
 }

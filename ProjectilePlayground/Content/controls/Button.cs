@@ -50,7 +50,7 @@ namespace ProjectilePlayground.Content.controls
             }
         }
 
-        public override void Update(GameTime gameTime)
+        public override void Update(GameTime gameTime, Environment E)
         {
             previousMouse = currentMouse;
             currentMouse = Mouse.GetState();
@@ -70,7 +70,7 @@ namespace ProjectilePlayground.Content.controls
                     Click?.Invoke(this, new EventArgs());
                 }
             }
-            base.Update(gameTime);
+            base.Update(gameTime, E);
         }
 
 
