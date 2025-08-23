@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Timers;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -14,6 +15,8 @@ namespace ProjectilePlayground
         private SpriteBatch _spriteBatch;
 
         private List<ScaledSprite> _sprites;
+        private List<Timer> _timers;
+        private List<TrailNode> _nodes;
         
         // for waiting projectiles
         private Queue<ScaledSprite> _spritesQueue;
@@ -34,6 +37,9 @@ namespace ProjectilePlayground
         int mass;
         float initial_angle;
         double radius; 
+
+
+
 
 
 
@@ -60,6 +66,9 @@ namespace ProjectilePlayground
         protected override void LoadContent()
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
+
+
+            // TODO: use this.Content to load your game content here
 
             var shootButton = new Button(Content.Load<Texture2D>("sprites/Button"), new Vector2(950, 600), 2f, Content.Load<SpriteFont>("fonts/font"))
             {
@@ -105,7 +114,7 @@ namespace ProjectilePlayground
             texture = Content.Load<Texture2D>("sprites/Final_face_circle");
             startPos = new Vector2(30, 630);
             scale = 0.25f;
-            initial_speed = 500f;
+            initial_speed = 0f;
             mass = 10;
             initial_angle = 80f;
             radius = 0.5d;
@@ -116,6 +125,9 @@ namespace ProjectilePlayground
 
             environment = new Environment(new Vector2(0, pixelsPerM* 9.81f));
 
+
+
+
             _sprites = new List<ScaledSprite> { 
                 projectile,
                 shootButton,
@@ -124,10 +136,9 @@ namespace ProjectilePlayground
             };
 
             _spritesQueue = new Queue<ScaledSprite> { };
-
             queuing = false;
 
-            // TODO: use this.Content to load your game content here
+            _timers = new List<Timer> { };
 
         }
 
@@ -136,6 +147,9 @@ namespace ProjectilePlayground
             var random = new Random();
             projectile = new Projectile(texture, startPos, scale, initial_speed, mass, initial_angle, radius);
             queuing = true;
+            var timer = new Timer();
+            timer.Start();
+            _timers.Add(timer);
             _spritesQueue.Enqueue(projectile);
         }
 
@@ -205,3 +219,5 @@ namespace ProjectilePlayground
         }
     }
 }
+// use projectile positions
+// place small dots at every other frame or so, contains stuff like velocity, height and tiem
