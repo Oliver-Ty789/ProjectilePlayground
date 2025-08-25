@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -11,22 +12,32 @@ namespace ProjectilePlayground
 {
     internal class Projectile : ScaledSprite
     {
+        private Vector2 initialPos;
+
         public int mass;
         public Vector2 velocity;
-        public float initial_angle;
+        public float initialAngle;
         //private Vector2 Force;
         public double radius;
-        public float initial_speed;
+        public float initialSpeed;
+        
         // public float C_of_D; // unimportant at this time
         //public float C_of_E;
         //public float angluar_velocity;
 
+
+
+        public List<TrailNode> _nodes;
+
         public Projectile(Texture2D texture, Vector2 position, float scale, float initial_s, int mass, float initial_a, double radius) : base (texture, position, scale)
         {
             this.mass = mass;
-            this.initial_speed = initial_s;
-            this.initial_angle = initial_a;
+            this.initialSpeed = initial_s;
+            this.initialAngle = initial_a;
             this.radius = radius;
+            this.initialPos = position;
+
+            _nodes = new List<TrailNode> { };
 
             velocity = new Vector2((float)(initial_s * Math.Cos(initial_a * Math.PI / 180)), -(float)(initial_s * Math.Sin(initial_a * Math.PI / 180)));
         }
@@ -40,13 +51,14 @@ namespace ProjectilePlayground
         public void ApplyForces(Environment environment, float delta)
         {
             // gravity
-            if (position.Y < 640)
+            if (position.Y < initialPos.Y + 1 && !(velocity == new Vector2(0,0)))
             {
                 velocity += environment.gravity * delta;
             }
             else
             {
                 velocity = new Vector2(0, 0);
+                position.Y = initialPos.Y;
             }
         }
 
@@ -66,6 +78,13 @@ namespace ProjectilePlayground
         public override void Draw(GameTime gameTime, SpriteBatch _spriteBatch)
         {
             _spriteBatch.Draw(texture, Rect, Color.White);
+
+            foreach (var node in _nodes)
+            {
+                node.Draw(gameTime, _spriteBatch);
+            }
+            //Console.WriteLine(_nodes.Count());
+
             base.Draw(gameTime, _spriteBatch);
         }
 
@@ -75,6 +94,13 @@ namespace ProjectilePlayground
             float delta = (float)gameTime.ElapsedGameTime.TotalSeconds; // difference in time between frames, keeps velocity/acceleration consitent 
             ApplyForces(environment, delta);
             ApplyVelocity(delta);
+
+            // for trail nodes
+            foreach (var node in _nodes)
+            {
+                node.Update(gameTime, environment);
+            }
+
             base.Update(gameTime, environment);
         }
     }

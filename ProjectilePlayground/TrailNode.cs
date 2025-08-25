@@ -30,6 +30,8 @@ namespace ProjectilePlayground
             this.height = height;
             this.time = time;
             this.range = range;
+
+            this.penColour = Color.Black;
         }
 
         public override void Draw(Microsoft.Xna.Framework.GameTime gameTime, SpriteBatch spriteBatch)
@@ -40,16 +42,16 @@ namespace ProjectilePlayground
             {
                 colour = Color.Gray;
                 spriteBatch.Draw(texture, Rect, colour);
-                var x = position.X + 30;
+                var x = position.X - 90;
                 // height
                 var yheight = position.Y - 30;
-                spriteBatch.DrawString(font, $"height: {height}", new Vector2(x, yheight), penColour);
+                spriteBatch.DrawString(font, $"height: {Math.Round(height,1)}m", new Vector2(x, yheight), penColour);
                 // time
                 var ytime = position.Y;
-                spriteBatch.DrawString(font, $"time: {time}", new Vector2(x, ytime), penColour);
+                spriteBatch.DrawString(font, $"time: {Math.Round(time,1)}s", new Vector2(x, ytime), penColour);
                 // range
                 var yrange = position.Y + 30;
-                spriteBatch.DrawString(font, $"range: {range}", new Vector2(x, yrange), penColour);
+                spriteBatch.DrawString(font, $"range: {Math.Round(range,1)}m", new Vector2(x, yrange), penColour);
             }
 
             else
