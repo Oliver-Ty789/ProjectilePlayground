@@ -18,9 +18,8 @@ namespace ProjectilePlayground
         public Vector2 velocity;
         public float initialAngle;
         //private Vector2 Force;
-        public double radius;
-        public float initialSpeed;
-        
+        public float radius;
+        public Vector2 previousVelocity;
         // public float C_of_D; // unimportant at this time
         //public float C_of_E;
         //public float angluar_velocity;
@@ -29,10 +28,10 @@ namespace ProjectilePlayground
 
         public List<TrailNode> _nodes;
 
-        public Projectile(Texture2D texture, Vector2 position, float scale, float initial_s, int mass, float initial_a, double radius) : base (texture, position, scale)
+        public Projectile(Texture2D texture, Vector2 position, float scale, float initial_s, int mass, float initial_a, float radius) : base (texture, position, scale)
         {
             this.mass = mass;
-            this.initialSpeed = initial_s;
+            
             this.initialAngle = initial_a;
             this.radius = radius;
             this.initialPos = position;
@@ -53,6 +52,7 @@ namespace ProjectilePlayground
             // gravity
             if (position.Y < initialPos.Y + 1 && !(velocity == new Vector2(0,0)))
             {
+                previousVelocity = velocity;
                 velocity += environment.gravity * delta;
             }
             else
@@ -69,9 +69,9 @@ namespace ProjectilePlayground
             // 3. use that scale to find pixels to meter
 
         {
-            double radiusP = (texture.Width * scale) /2; // finds the radius of the projectile in pixels
-            double radiusPerMeter = 1/radius; // eg if radius = 0.5 therefore there would be 2 radius' per meter
-            float pixelsToMeter = Convert.ToSingle(radiusPerMeter * radiusP);
+            float radiusP = (texture.Width * scale) /2; // finds the radius of the projectile in pixels
+            float radiusPerMeter = 1/radius; // eg if radius = 0.5 therefore there would be 2 radius' per meter
+            float pixelsToMeter = radiusPerMeter * radiusP;
             return pixelsToMeter;
         }
 

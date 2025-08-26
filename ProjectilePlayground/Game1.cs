@@ -40,9 +40,9 @@ namespace ProjectilePlayground
         float initial_speed;
         int mass;
         float initial_angle;
-        double radius;
+        float radius;
         float time;
-        Timer timer;
+        DateTime timerStartTime;
 
 
 
@@ -122,7 +122,7 @@ namespace ProjectilePlayground
             initial_speed = 0f;
             mass = 10;
             initial_angle = 80f;
-            radius = 0.5d;
+            radius = 0.5f;
             time = 0f;
 
             projectile = new Projectile(texture, startPos, scale, initial_speed, mass, initial_angle, radius);
@@ -169,6 +169,7 @@ namespace ProjectilePlayground
             timer.Elapsed += Tick;
             timer.Enabled = true;
             time = 0;
+            timerStartTime = DateTime.Now; // to record how long timer has been running, for turning points
             timer.Start();
             _timers.Add(timer);
             _projectileQueue.Enqueue(projectile);
@@ -210,7 +211,8 @@ namespace ProjectilePlayground
                     VectorMaths.Length(projectile.position - startPos) / pixelsPerM ,
                     texture,
                     projectile.position,
-                    .1f
+                    .1f,
+                    false
                     );
                 _nodeQueue.Enqueue(node);
                 tickqueuing = true;
@@ -235,29 +237,21 @@ namespace ProjectilePlayground
             }
 
 
-            //if (queuing && !tickqueuing) // add projectile
-            //{
-            //    foreach (var queuedsprite in _spritesQueue)
-            //    {
-            //        _sprites.Remove(projectile);
-            //        _sprites.Add(queuedsprite);
-            //    }
-            //    _spritesQueue.Clear();
-                
-            //    queuing = false;
-
-            //}
-            //else if (queuing && tickqueuing) // add tick
-            //{
-            //    foreach (var queuedsprite in _spritesQueue)
-            //    {
-            //        _sprites.Add(queuedsprite);
-            //    }
-            //    _spritesQueue.Clear();
-
-            //    queuing = false;
-            //    tickqueuing = false;
-            //}
+            if (projectile.previousVelocity.Y < 0 &&  projectile.velocity.Y > 0) // adding trail node at highest point
+            {
+                TrailNode node = new TrailNode(
+                    Content.Load<SpriteFont>("fonts/font"),
+                    (startPos - projectile.position).Y / pixelsPerM,
+                    (float)(DateTime.Now - timerStartTime).TotalSeconds,
+                    VectorMaths.Length(projectile.position - startPos) / pixelsPerM,
+                    texture,
+                    projectile.position,
+                    .15f,
+                    true
+                    );
+                _nodeQueue.Enqueue(node);
+                tickqueuing = true;
+            }
 
             if (queuing) // add projectile to projectile list
             {
@@ -291,17 +285,15 @@ namespace ProjectilePlayground
             // TODO: Add your drawing code here
 
             _spriteBatch.Begin(samplerState: SamplerState.LinearWrap);
-
-            foreach (var sprite in _sprites)
-            {
-                sprite.Draw(gameTime, _spriteBatch);
-            }
             foreach (var projectile in _projectiles)
             {
                 projectile.Draw(gameTime, _spriteBatch);
             }
-            
-            
+            foreach (var sprite in _sprites)
+            {
+                sprite.Draw(gameTime, _spriteBatch);
+            }
+
             _spriteBatch.End();
 
             base.Draw(gameTime);

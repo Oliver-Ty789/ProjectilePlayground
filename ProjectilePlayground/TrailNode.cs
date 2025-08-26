@@ -18,25 +18,34 @@ namespace ProjectilePlayground
         private MouseState currentMouse;
         private Color penColour;
         private bool isHovering;
+        private Color colour;
 
         // public
         public float height;
         public float time;
         public float range;
+        public bool isYellow;
 
-        public TrailNode(SpriteFont font, float height, float time, float range, Texture2D texture, Vector2 position, float scale) : base(texture, position, scale)
+        public TrailNode(SpriteFont font, float height, float time, float range, Texture2D texture, Vector2 position, float scale, bool isYellow) : base(texture, position, scale)
         {
             this.font = font;
             this.height = height;
             this.time = time;
             this.range = range;
-
+            this.isYellow = isYellow;
             this.penColour = Color.Black;
         }
 
         public override void Draw(Microsoft.Xna.Framework.GameTime gameTime, SpriteBatch spriteBatch)
         {
-            var colour = Color.White;
+            if (isYellow)
+            {
+                colour = Color.Yellow;
+            }
+            else
+            {
+                colour = Color.White;
+            }
 
             if (isHovering) // display properties as well
             {
@@ -45,19 +54,21 @@ namespace ProjectilePlayground
                 var x = position.X - 90;
                 // height
                 var yheight = position.Y - 30;
-                spriteBatch.DrawString(font, $"height: {Math.Round(height,1)}m", new Vector2(x, yheight), penColour);
+                spriteBatch.DrawString(font, $"height: {Math.Round(height, 2)}m", new Vector2(x, yheight), penColour);
                 // time
                 var ytime = position.Y;
-                spriteBatch.DrawString(font, $"time: {Math.Round(time,1)}s", new Vector2(x, ytime), penColour);
+                spriteBatch.DrawString(font, $"time: {Math.Round(time, 2)}s", new Vector2(x, ytime), penColour);
                 // range
                 var yrange = position.Y + 30;
-                spriteBatch.DrawString(font, $"range: {Math.Round(range,1)}m", new Vector2(x, yrange), penColour);
+                spriteBatch.DrawString(font, $"range: {Math.Round(range, 2)}m", new Vector2(x, yrange), penColour);
             }
 
             else
             {
                 spriteBatch.Draw(texture, Rect, colour);
             }
+
+            
 
                 base.Draw(gameTime, spriteBatch);
         }
