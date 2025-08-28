@@ -99,7 +99,8 @@ namespace ProjectilePlayground
   
             speedSlider.Click += ScrollerClick;
 
-            var angleSlider = new Slider(Content.Load<Texture2D>("sprites/scroller"),
+            var angleSlider = new Slider(
+                Content.Load<Texture2D>("sprites/scroller"),
                 new Vector2(800, 200),
                 2f,
                 Content.Load<SpriteFont>("fonts/font"),
@@ -115,6 +116,25 @@ namespace ProjectilePlayground
 
             angleSlider.Click += ScrollerClick;
 
+
+            var gravitySlider = new Slider(
+                Content.Load<Texture2D>("sprites/scroller"),
+                new Vector2(800, 100),
+                2f,
+                Content.Load<SpriteFont>("fonts/font"),
+                Content.Load<Texture2D>("sprites/sliderbar"))
+            {
+                text_scroller = "na",
+                text_min = "0 m/s^2",
+                text_max = "50 m/s^2",
+                text_desc = "gravity",
+                index = 2,
+                maxValue = 50f,
+            };
+
+            gravitySlider.Click += ScrollerClick;
+
+
             // parameters for first projectile (test)
             texture = Content.Load<Texture2D>("sprites/Final_face_circle");
             startPos = new Vector2(30, 630);
@@ -129,7 +149,7 @@ namespace ProjectilePlayground
 
             pixelsPerM = projectile.ConversionToSI();
 
-            environment = new Environment(new Vector2(0, pixelsPerM* 9.81f));
+            environment = new Environment(new Vector2( pixelsPerM* 9.81f));
 
 
 
@@ -138,6 +158,7 @@ namespace ProjectilePlayground
                 shootButton,
                 speedSlider,
                 angleSlider,
+                gravitySlider,
             };
 
             _projectiles = new List<Projectile>
@@ -187,7 +208,9 @@ namespace ProjectilePlayground
                 case 1:
                     initial_angle = e.property;
                     break;
-
+                case 2:
+                    environment.gravity = new Vector2(0 ,e.property * pixelsPerM);
+                    break;
                 default:
                     break;
 
@@ -210,7 +233,7 @@ namespace ProjectilePlayground
                     time,
                     VectorMaths.Length(projectile.position - startPos) / pixelsPerM ,
                     texture,
-                    projectile.position,
+                    new Vector2(projectile.position.X, projectile.position.Y + 5), // provide offset
                     .1f,
                     false
                     );
@@ -245,7 +268,7 @@ namespace ProjectilePlayground
                     (float)(DateTime.Now - timerStartTime).TotalSeconds,
                     VectorMaths.Length(projectile.position - startPos) / pixelsPerM,
                     texture,
-                    projectile.position,
+                    new Vector2 (projectile.position.X, projectile.position.Y + 2), // provides an offset to place in middle of path
                     .15f,
                     true
                     );
