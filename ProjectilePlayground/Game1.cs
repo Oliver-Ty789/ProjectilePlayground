@@ -44,7 +44,10 @@ namespace ProjectilePlayground
         float time;
         DateTime timerStartTime;
 
+        // base values
 
+        float baseSpeed;
+        float baseAngle;
 
 
 
@@ -66,11 +69,16 @@ namespace ProjectilePlayground
             texture = Content.Load<Texture2D>("sprites/Final_face_circle");
             startPos = new Vector2(30, 630);
             scale = 0.25f;
-            initial_speed = 0f;
+            initial_speed = 15f;
             mass = 10;
-            initial_angle = 80f;
+            initial_angle = 40f;
             radius = 0.5f;
             time = 0f;
+
+            // slider base properties
+            baseSpeed = 15f;
+            baseAngle = 45f;
+
 
             base.Initialize();
         }
@@ -150,6 +158,10 @@ namespace ProjectilePlayground
 
             environment = new Environment(new Vector2( pixelsPerM* 9.81f));
 
+            // set all sliders beforehand
+            speedSlider.PropertyPlacement(baseSpeed);
+            angleSlider.PropertyPlacement(baseAngle);
+            gravitySlider.PropertyPlacement(environment.gravity.Y/pixelsPerM);
 
 
 

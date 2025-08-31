@@ -76,6 +76,16 @@ namespace ProjectilePlayground.Content.controls
             _chars = new List<char>();
         }
 
+        private bool IsDecimalPoint()
+        {
+            foreach (var letter in text_scroller)
+            {
+                if (letter == '.')
+                    return true;
+            }
+            return false;
+        }
+
         private Vector2 ScrollerMovement(Vector2 position)
         {
             // moves scoller to cusors X pos
@@ -167,9 +177,12 @@ namespace ProjectilePlayground.Content.controls
                     }
 
                 }
-                
+                if (keys[0] == Keys.OemPeriod && !IsDecimalPoint()) // check if decimal point and no other decimal points already there
+                {
+                    if (previousKey.IsKeyUp(keys[0]) && currentKey.IsKeyDown(keys[0])) // check if just pressed
+                        textBox.AddMoreText('.');
+                }
             }   
-
         }
 
         public override void Draw(GameTime gameTime, SpriteBatch spriteBatch)
@@ -271,10 +284,9 @@ namespace ProjectilePlayground.Content.controls
                     isTexting = false;
                     
                     // need to check if value is appropriate
-
                     float value = Convert.ToSingle(text_scroller);
                     Console.WriteLine(value);
-                    if (value < maxValue)
+                    if (value <= maxValue)
                     {
                         PropertyPlacement(value);
                         property = value;

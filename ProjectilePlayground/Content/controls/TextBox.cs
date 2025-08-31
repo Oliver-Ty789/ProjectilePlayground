@@ -43,15 +43,6 @@ namespace ProjectilePlayground.Content.controls
         {
             Vector2 spacing = new Vector2();
             keyboardState = Keyboard.GetState();
-            
-
-            //if (((int)Char.GetNumericValue(text) < 0 || (int)Char.GetNumericValue(text) > 9) && !text.Equals('.')) // don't allow non-numeric characters 
-            //{
-            //    if (text != '\b')
-            //    {
-            //        return;
-            //    }
-            //} 
 
             if (text == '\b') // if entered key is a backspace
             {
