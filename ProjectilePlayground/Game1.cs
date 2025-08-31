@@ -62,8 +62,15 @@ namespace ProjectilePlayground
         {
             // TODO: Add your initialization logic here
 
-            // make mouse visible during the game
-            IsMouseVisible = true;
+            // parameters for first projectile (test)
+            texture = Content.Load<Texture2D>("sprites/Final_face_circle");
+            startPos = new Vector2(30, 630);
+            scale = 0.25f;
+            initial_speed = 0f;
+            mass = 10;
+            initial_angle = 80f;
+            radius = 0.5f;
+            time = 0f;
 
             base.Initialize();
         }
@@ -86,7 +93,8 @@ namespace ProjectilePlayground
                 new Vector2(800, 400), 
                 2f, 
                 Content.Load<SpriteFont>("fonts/font"), 
-                Content.Load<Texture2D>("sprites/sliderbar"))
+                Content.Load<Texture2D>("sprites/sliderbar"),
+                Content.Load<Texture2D>("sprites/flashingCursor"))
             { 
                 text_scroller = "na" ,
                 text_min = "0 m/s",
@@ -101,10 +109,11 @@ namespace ProjectilePlayground
 
             var angleSlider = new Slider(
                 Content.Load<Texture2D>("sprites/scroller"),
-                new Vector2(800, 200),
+                new Vector2(800, 300),
                 2f,
                 Content.Load<SpriteFont>("fonts/font"),
-                Content.Load<Texture2D>("sprites/sliderbar"))
+                Content.Load<Texture2D>("sprites/sliderbar"),
+                Content.Load<Texture2D>("sprites/flashingCursor"))
             {
                 text_scroller = "na",
                 text_min = "0 degrees",
@@ -119,10 +128,11 @@ namespace ProjectilePlayground
 
             var gravitySlider = new Slider(
                 Content.Load<Texture2D>("sprites/scroller"),
-                new Vector2(800, 100),
+                new Vector2(800, 200),
                 2f,
                 Content.Load<SpriteFont>("fonts/font"),
-                Content.Load<Texture2D>("sprites/sliderbar"))
+                Content.Load<Texture2D>("sprites/sliderbar"),
+                Content.Load<Texture2D>("sprites/flashingCursor"))
             {
                 text_scroller = "na",
                 text_min = "0 m/s^2",
@@ -133,17 +143,6 @@ namespace ProjectilePlayground
             };
 
             gravitySlider.Click += ScrollerClick;
-
-
-            // parameters for first projectile (test)
-            texture = Content.Load<Texture2D>("sprites/Final_face_circle");
-            startPos = new Vector2(30, 630);
-            scale = 0.25f;
-            initial_speed = 0f;
-            mass = 10;
-            initial_angle = 80f;
-            radius = 0.5f;
-            time = 0f;
 
             projectile = new Projectile(texture, startPos, scale, initial_speed, mass, initial_angle, radius);
 
@@ -174,7 +173,7 @@ namespace ProjectilePlayground
             _timers = new List<Timer> { };
 
         }
-
+        // called everytime shootbutton is clicked, fires new projectile & sets up runtime timers
         private void ShootButton_Click(object sender, System.EventArgs e)
         {
             projectile = new Projectile(texture, startPos, scale, initial_speed, mass, initial_angle, radius);
@@ -196,7 +195,7 @@ namespace ProjectilePlayground
             _projectileQueue.Enqueue(projectile);
         }
 
-
+        // called everytime scroller is let go, sets properties for projectile
         private void ScrollerClick(object sender, SliderClickEventArgs e)
         {
             switch (e.index) // sets all attributes of projectile
