@@ -76,7 +76,7 @@ namespace ProjectilePlayground.Content.controls
             _chars = new List<char>();
         }
 
-        private Vector2 ScrollerMovement(Vector2 position, MouseState currentMouse, MouseState previousMouse)
+        private Vector2 ScrollerMovement(Vector2 position)
         {
             // moves scoller to cusors X pos
           
@@ -103,7 +103,19 @@ namespace ProjectilePlayground.Content.controls
             
         }
 
-        private float FindProperty(float maxValue)
+        public void PropertyPlacement(float value) // move scroller to parameter
+        {
+            // find how far along the scroller should be due to value & maxValue
+
+            float percentageBar = value / maxValue;
+
+            // find available space on bar
+            float space = (BarRect.Right - (BarRect.Left+ 40));
+
+            position = new Vector2((space * percentageBar)  + BarRect.Left, position.Y);
+        }
+
+        private float FindProperty()
         {
 
             // find how far along the scroller is on the bar then calcuate its selected value
@@ -229,7 +241,7 @@ namespace ProjectilePlayground.Content.controls
                     
                     // used the change in postion between the current and previous mousestates to determine how far to move the scroller
 
-                    position = ScrollerMovement(position, currentMouse, previousMouse);
+                    position = ScrollerMovement(position);
                     isDragging = true;
                 }
 
@@ -257,9 +269,18 @@ namespace ProjectilePlayground.Content.controls
                 if (currentKey.GetPressedKeys()[0] == Keys.Enter) // if enter has been clicked, set property 
                 {
                     isTexting = false;
-                    Console.WriteLine("done sexting");
+                    
+                    // need to check if value is appropriate
+
+                    float value = Convert.ToSingle(text_scroller);
+                    Console.WriteLine(value);
+                    if (value < maxValue)
+                    {
+                        PropertyPlacement(value);
+                        property = value;
+                        Click?.Invoke(this, new SliderClickEventArgs(property, index));
+                    }
                 }
-                
             }
 
 
@@ -272,7 +293,7 @@ namespace ProjectilePlayground.Content.controls
 
 
             else
-                property = FindProperty(maxValue);
+                property = FindProperty();
 
             base.Update(gameTime, E);
         } 
