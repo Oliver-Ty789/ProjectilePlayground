@@ -15,7 +15,8 @@ namespace ProjectilePlayground
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
 
-        private List<ScaledSprite> _sprites;
+        private Slider [] _sliders;
+        private Button [] _buttons;
         private List<Projectile> _projectiles;
         private List<Timer> _timers;
         
@@ -48,6 +49,7 @@ namespace ProjectilePlayground
 
         float baseSpeed;
         float baseAngle;
+        float baseGravity;
 
 
 
@@ -78,6 +80,7 @@ namespace ProjectilePlayground
             // slider base properties
             baseSpeed = 15f;
             baseAngle = 45f;
+            baseGravity = 9.81f;
 
 
             base.Initialize();
@@ -90,12 +93,20 @@ namespace ProjectilePlayground
 
             // TODO: use this.Content to load your game content here
 
-            var shootButton = new Button(Content.Load<Texture2D>("sprites/Button"), new Vector2(950, 600), 2f, Content.Load<SpriteFont>("fonts/font"))
+            var shootButton = new Button(Content.Load<Texture2D>("sprites/Button"), new Vector2(950, 600), 2f, Content.Load<SpriteFont>("fonts/font"), 0)
             {
                 text = "SHOOT",
             };
              
-            shootButton.Click += ShootButton_Click;
+            shootButton.Click += Button_Click;
+
+            var resetButton = new Button(Content.Load<Texture2D>("sprites/Button"), new Vector2(1170, 20), 0.5f, Content.Load<SpriteFont>("fonts/font"), 1)
+            {
+                text = "RESET",
+            };
+
+            resetButton.Click += Button_Click;
+
 
             var speedSlider = new Slider(Content.Load<Texture2D>("sprites/scroller"), 
                 new Vector2(800, 400), 
@@ -152,29 +163,32 @@ namespace ProjectilePlayground
 
             gravitySlider.Click += ScrollerClick;
 
-            projectile = new Projectile(texture, startPos, scale, initial_speed, mass, initial_angle, radius);
+            projectile = new Projectile(texture, startPos, scale, baseSpeed, mass, baseAngle, radius);
 
             pixelsPerM = projectile.ConversionToSI();
 
-            environment = new Environment(new Vector2( pixelsPerM* 9.81f));
+            initial_speed *= pixelsPerM; // convert pixels/s to m/s
 
-            // set all sliders beforehand
-            speedSlider.PropertyPlacement(baseSpeed);
-            angleSlider.PropertyPlacement(baseAngle);
-            gravitySlider.PropertyPlacement(environment.gravity.Y/pixelsPerM);
+            environment = new Environment(new Vector2( 0,pixelsPerM* 9.81f));
 
-
-
-            _sprites = new List<ScaledSprite> { 
+            _buttons = new Button[] 
+            { 
                 shootButton,
+                resetButton,
+            };
+
+            _sliders = new Slider[]
+            {
                 speedSlider,
                 angleSlider,
                 gravitySlider,
             };
 
+            ResetAllSliders();
+
             _projectiles = new List<Projectile>
             {
-                projectile,
+                
             };
 
             _projectileQueue = new Queue<Projectile> { };
@@ -186,25 +200,42 @@ namespace ProjectilePlayground
 
         }
         // called everytime shootbutton is clicked, fires new projectile & sets up runtime timers
-        private void ShootButton_Click(object sender, System.EventArgs e)
+        private void Button_Click(object sender, System.EventArgs e)
         {
-            projectile = new Projectile(texture, startPos, scale, initial_speed, mass, initial_angle, radius);
-            queuing = true;
+            var button = sender as Button;
 
-            foreach (var clock in _timers)
-            {
-                Console.WriteLine(_timers.Count());
-                clock.Dispose();
+            switch (button.index) // for handling different buttons
+            { 
+                case 0: // shoot button
+                    projectile = new Projectile(texture, startPos, scale, initial_speed, mass, initial_angle, radius);
+                    queuing = true;
+
+                    foreach (var clock in _timers)
+                    {
+                        clock.Dispose();
+                    }
+                    _timers.Clear();
+                    Timer timer = new Timer(100);
+                    timer.Elapsed += Tick;
+                    timer.Enabled = true;
+                    time = 0;
+                    timerStartTime = DateTime.Now; // to record how long timer has been running, for turning points
+                    timer.Start();
+                    _timers.Add(timer);
+                    _projectileQueue.Enqueue(projectile);
+                    break;
+
+                case 1:
+                    _projectiles.Clear();
+                    initial_angle = baseAngle;
+                    initial_speed = baseSpeed * pixelsPerM;
+                    environment.gravity = new Vector2(0, baseGravity * pixelsPerM);
+                    ResetAllSliders(); // sets position of sliders to correct place
+                    break;
+                default:
+                    break;
+
             }
-            _timers.Clear();
-            Timer timer = new Timer(100);
-            timer.Elapsed += Tick;
-            timer.Enabled = true;
-            time = 0;
-            timerStartTime = DateTime.Now; // to record how long timer has been running, for turning points
-            timer.Start();
-            _timers.Add(timer);
-            _projectileQueue.Enqueue(projectile);
         }
 
         // called everytime scroller is let go, sets properties for projectile
@@ -253,6 +284,28 @@ namespace ProjectilePlayground
             }
         }
 
+        protected void ResetAllSliders()
+        {
+            foreach (var slider in _sliders)
+            {
+                switch (slider.index) 
+                {
+                    case 0:
+                        slider.PropertyPlacement(baseSpeed);
+                        break;
+                    case 1:
+                        slider.PropertyPlacement(baseAngle);
+                        break;
+                    case 2: 
+                        slider.PropertyPlacement(baseGravity);
+                        break;
+                    default :
+                        break;
+                }
+
+            }
+        }
+
         protected override void Update(GameTime gameTime)
         {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
@@ -260,9 +313,13 @@ namespace ProjectilePlayground
 
             // TODO: Add your update logic here
 
-            foreach (var sprite in _sprites)
+            foreach (var button in _buttons)
             {
-                sprite.Update(gameTime, environment);
+                button.Update(gameTime, environment);
+            }
+            foreach (var slider in _sliders)
+            {
+                slider.Update(gameTime, environment);
             }
 
             foreach (var projectile in _projectiles)
@@ -323,9 +380,13 @@ namespace ProjectilePlayground
             {
                 projectile.Draw(gameTime, _spriteBatch);
             }
-            foreach (var sprite in _sprites)
+            foreach (var button in _buttons)
             {
-                sprite.Draw(gameTime, _spriteBatch);
+                button.Draw(gameTime, _spriteBatch);
+            }
+            foreach (var slider in _sliders)
+            {
+                slider.Draw(gameTime, _spriteBatch);
             }
 
             _spriteBatch.End();

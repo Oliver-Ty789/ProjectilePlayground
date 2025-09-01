@@ -26,11 +26,13 @@ namespace ProjectilePlayground.Content.controls
         public bool isClicked { get; private set; }
         public Color penColour { get; set; }
         public string text { get; set; }
+        public int index { get; set; }
        
-        public Button (Texture2D texture, Vector2 position, float scale, SpriteFont font) : base (texture, position, scale)
+        public Button (Texture2D texture, Vector2 position, float scale, SpriteFont font, int index) : base (texture, position, scale)
         {
             this.font = font;
             penColour = Color.Black;
+            this.index = index;
         }
         public override void Draw(GameTime gameTime ,SpriteBatch spriteBatch)
         {
