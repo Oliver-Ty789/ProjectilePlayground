@@ -15,20 +15,22 @@ namespace ProjectilePlayground.Content.controls
         // slider is a special type of button that we are going to manipulate to choose specific values for our projectile
         // need scrollertexture, its own rect, 
 
-        // private
-        private MouseState currentMouse;
-        private MouseState previousMouse;
-        private KeyboardState currentKey;
-        private KeyboardState previousKey;
-        private SpriteFont font;
-        private bool isHovering;
-        private bool isDragging;
-        private bool isTexting;
-        private Texture2D barTexture;
-        private Vector2 barPosition;
-        private TextBox textBox;
-        private Texture2D cursorTexture;
-        private int timeBeforeNextDelete;
+        // public
+        public MouseState currentMouse;
+        public MouseState previousMouse;
+        public KeyboardState currentKey;
+        public KeyboardState previousKey;
+        public SpriteFont font;
+        public bool isHovering;
+        public bool isDragging;
+        public bool isTexting;
+        public bool isCannon;
+        public Texture2D barTexture;
+        public Vector2 barPosition;
+        public TextBox textBox;
+        public Texture2D cursorTexture;
+        public int timeBeforeNextDelete;
+        
 
         // public
         public event EventHandler<SliderClickEventArgs> Click;
@@ -66,17 +68,18 @@ namespace ProjectilePlayground.Content.controls
             }
         }
 
-        public Slider(Texture2D texture, Vector2 position, float scale, SpriteFont font, Texture2D barTexture , Texture2D cursorTexture) : base(texture, position, scale)
+        public Slider(Texture2D texture, Vector2 position, float scale, SpriteFont font, Texture2D barTexture , Texture2D cursorTexture, bool isCannon) : base(texture, position, scale)
         {
             this.barTexture = barTexture;
             this.font = font;
             this.cursorTexture = cursorTexture;
+            this.isCannon = isCannon;
             penColour = Color.Black;
             barPosition = new Vector2(position.X - 30, position.Y);
             _chars = new List<char>();
         }
 
-        private bool IsDecimalPoint()
+        public bool IsDecimalPoint()
         {
             foreach (var letter in text_scroller)
             {
@@ -86,7 +89,7 @@ namespace ProjectilePlayground.Content.controls
             return false;
         }
 
-        private Vector2 ScrollerMovement(Vector2 position)
+        public Vector2 ScrollerMovement(Vector2 position)
         {
             // moves scoller to cusors X pos
           
@@ -113,7 +116,7 @@ namespace ProjectilePlayground.Content.controls
             
         }
 
-        public void PropertyPlacement(float value) // move scroller to parameter
+        public virtual void PropertyPlacement(float value) // move scroller to parameter
         {
             // find how far along the scroller should be due to value & maxValue
 
@@ -125,7 +128,7 @@ namespace ProjectilePlayground.Content.controls
             position = new Vector2((space * percentageBar)  + BarRect.Left, position.Y);
         }
 
-        private float FindProperty()
+        public virtual float FindProperty()
         {
 
             // find how far along the scroller is on the bar then calcuate its selected value
@@ -138,7 +141,7 @@ namespace ProjectilePlayground.Content.controls
             return pencentageBar * maxValue;
         }
 
-        private void HandleInput()
+        public void HandleInput()
         {
             Keys[] keys = currentKey.GetPressedKeys();
             String value = String.Empty;

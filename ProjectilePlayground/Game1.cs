@@ -113,7 +113,8 @@ namespace ProjectilePlayground
                 2f, 
                 Content.Load<SpriteFont>("fonts/font"), 
                 Content.Load<Texture2D>("sprites/sliderbar"),
-                Content.Load<Texture2D>("sprites/flashingCursor"))
+                Content.Load<Texture2D>("sprites/flashingCursor"),
+                false)
             { 
                 text_scroller = "na" ,
                 text_min = "0 m/s",
@@ -126,23 +127,24 @@ namespace ProjectilePlayground
   
             speedSlider.Click += ScrollerClick;
 
-            var angleSlider = new Slider(
-                Content.Load<Texture2D>("sprites/scroller"),
-                new Vector2(800, 300),
-                2f,
-                Content.Load<SpriteFont>("fonts/font"),
-                Content.Load<Texture2D>("sprites/sliderbar"),
-                Content.Load<Texture2D>("sprites/flashingCursor"))
-            {
-                text_scroller = "na",
-                text_min = "0 degrees",
-                text_max = "90 degrees",
-                text_desc = "angle",
-                index = 1,
-                maxValue = 90f,
-            };
+            //var angleSlider = new Slider(
+            //    Content.Load<Texture2D>("sprites/scroller"),
+            //    new Vector2(800, 300),
+            //    2f,
+            //    Content.Load<SpriteFont>("fonts/font"),
+            //    Content.Load<Texture2D>("sprites/sliderbar"),
+            //    Content.Load<Texture2D>("sprites/flashingCursor"),
+            //    false)
+            //{
+            //    text_scroller = "na",
+            //    text_min = "0 degrees",
+            //    text_max = "90 degrees",
+            //    text_desc = "angle",
+            //    index = 1,
+            //    maxValue = 90f,
+            //};
 
-            angleSlider.Click += ScrollerClick;
+            //angleSlider.Click += ScrollerClick;
 
 
             var gravitySlider = new Slider(
@@ -151,7 +153,8 @@ namespace ProjectilePlayground
                 2f,
                 Content.Load<SpriteFont>("fonts/font"),
                 Content.Load<Texture2D>("sprites/sliderbar"),
-                Content.Load<Texture2D>("sprites/flashingCursor"))
+                Content.Load<Texture2D>("sprites/flashingCursor"),
+                false)
             {
                 text_scroller = "na",
                 text_min = "0 m/s^2",
@@ -162,6 +165,23 @@ namespace ProjectilePlayground
             };
 
             gravitySlider.Click += ScrollerClick;
+
+            var cannon = new Cannon(
+                Content.Load<Texture2D>("sprites/cannonHead"),
+                new Vector2(50, 615),
+                1f,
+                Content.Load<Texture2D>("sprites/cannonWheel"),
+                Content.Load<SpriteFont>("fonts/font"),
+                Content.Load<Texture2D>("sprites/flashingCursor"),
+                false)
+            { 
+                text_scroller = "na",
+                index = 1,
+                maxValue = 90f
+            };
+
+            cannon.Click += ScrollerClick;
+
 
             projectile = new Projectile(texture, startPos, scale, baseSpeed, mass, baseAngle, radius);
 
@@ -180,8 +200,9 @@ namespace ProjectilePlayground
             _sliders = new Slider[]
             {
                 speedSlider,
-                angleSlider,
+                //angleSlider,
                 gravitySlider,
+                cannon
             };
 
             ResetAllSliders();
