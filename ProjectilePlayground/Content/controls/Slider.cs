@@ -256,8 +256,8 @@ namespace ProjectilePlayground.Content.controls
                 {
                     
                     // used the change in postion between the current and previous mousestates to determine how far to move the scroller
-
-                    position = ScrollerMovement(position);
+                    if (!isCannon)
+                        position = ScrollerMovement(position);
                     isDragging = true;
                 }
 

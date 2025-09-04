@@ -168,12 +168,12 @@ namespace ProjectilePlayground
 
             var cannon = new Cannon(
                 Content.Load<Texture2D>("sprites/cannonHead"),
-                new Vector2(50, 615),
+                new Vector2(50, 630),
                 1f,
                 Content.Load<Texture2D>("sprites/cannonWheel"),
                 Content.Load<SpriteFont>("fonts/font"),
                 Content.Load<Texture2D>("sprites/flashingCursor"),
-                false)
+                true)
             { 
                 text_scroller = "na",
                 index = 1,
