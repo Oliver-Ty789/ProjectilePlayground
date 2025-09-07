@@ -15,7 +15,7 @@ namespace ProjectilePlayground
 
         public float scale;
 
-        public Microsoft.Xna.Framework.Rectangle Rect // dependent on position at time of call, better than a variable
+        public Microsoft.Xna.Framework.Rectangle DrawingRect // dependent on position at time of call, better than a variable
         {
             get
             {
@@ -24,6 +24,28 @@ namespace ProjectilePlayground
                     (int)(texture.Width * scale), 
                     (int)(texture.Height * scale));
 
+            }
+        }
+        public Microsoft.Xna.Framework.Rectangle SourceRect
+        {
+            get
+            {
+                return new Microsoft.Xna.Framework.Rectangle(
+                    0,
+                    0,
+                    (int)(texture.Width * scale),
+                    (int)(texture.Height * scale));
+            }
+        }
+        public VerticesRectangle CollisionRect
+        {
+            get
+            {
+                return new VerticesRectangle(
+                    position,
+                    texture.Width,
+                    texture.Height,
+                    scale);
             }
         }
         public ScaledSprite(Texture2D texture, Vector2 position, float scale): base(texture, position)

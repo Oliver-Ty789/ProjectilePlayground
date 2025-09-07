@@ -109,7 +109,7 @@ namespace ProjectilePlayground
 
 
             var speedSlider = new Slider(Content.Load<Texture2D>("sprites/scroller"), 
-                new Vector2(800, 400), 
+                new Vector2(800, 300), 
                 2f, 
                 Content.Load<SpriteFont>("fonts/font"), 
                 Content.Load<Texture2D>("sprites/sliderbar"),

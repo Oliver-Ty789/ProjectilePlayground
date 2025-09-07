@@ -1,14 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace ProjectilePlayground
 {
-    internal static class Collisions
+    internal static class Collisions 
     {
         public static bool IntersectingPolygons(Vector2[] verticesA, Vector2[] verticesB) // finds egde and normal to see if polygons overlap in an axis
         {
@@ -21,10 +23,12 @@ namespace ProjectilePlayground
                 Vector2 normal = new Vector2(-edge.Y, edge.X); // finds the perpendicular vector to chosen edge
 
                 ProjectVertices(verticesA, normal, out float minA, out float maxA);
-                ProjectVertices(verticesA, normal, out float minB, out float maxB);
+                ProjectVertices(verticesB, normal, out float minB, out float maxB);
+                
 
                 if (minA >= maxB || minB >= maxA)
                 {
+                    
                     return false;
                 }
             }
@@ -37,7 +41,7 @@ namespace ProjectilePlayground
                 Vector2 normal = new Vector2(-edge.Y, edge.X); // finds the perpendicular vector to chosen edge
 
                 ProjectVertices(verticesA, normal, out float minA, out float maxA);
-                ProjectVertices(verticesA, normal, out float minB, out float maxB);
+                ProjectVertices(verticesB, normal, out float minB, out float maxB);
 
                 if (minA >= maxB || minB >= maxA)
                 {

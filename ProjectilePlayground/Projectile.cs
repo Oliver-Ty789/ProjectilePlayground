@@ -77,7 +77,7 @@ namespace ProjectilePlayground
 
         public override void Draw(GameTime gameTime, SpriteBatch _spriteBatch)
         {
-            _spriteBatch.Draw(texture, Rect, Color.White);
+            _spriteBatch.Draw(texture, DrawingRect, Color.White);
 
             foreach (var node in _nodes)
             {

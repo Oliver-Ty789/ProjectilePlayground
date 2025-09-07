@@ -41,12 +41,12 @@ namespace ProjectilePlayground.Content.controls
             if (isHovering)
                 colour = Color.Gray;
 
-            spriteBatch.Draw(texture, Rect, colour);
+            spriteBatch.Draw(texture, DrawingRect, colour);
 
             if (!string.IsNullOrEmpty(text))
             {
-                var x = (Rect.X + (Rect.Width / 2)) - (font.MeasureString(text).X / 2);
-                var y = (Rect.Y + (Rect.Height / 2)) - (font.MeasureString(text).Y / 2);
+                var x = (CollisionRect.X + (CollisionRect.Width / 2)) - (font.MeasureString(text).X / 2);
+                var y = (CollisionRect.Y + (CollisionRect.Height / 2)) - (font.MeasureString(text).Y / 2);
 
                 spriteBatch.DrawString(font, text, new Vector2 (x, y), penColour);
             }
@@ -57,13 +57,13 @@ namespace ProjectilePlayground.Content.controls
             previousMouse = currentMouse;
             currentMouse = Mouse.GetState();
 
-            var mouseRect = new Rectangle(currentMouse.X, currentMouse.Y, 1, 1);
+            var mouseRect = new VerticesRectangle(new Vector2(currentMouse.X, currentMouse.Y), 1,1,1);
 
             isHovering = false;
 
             // checking if mouse is hovering and or clicking the button
 
-            if (mouseRect.Intersects(Rect))
+            if (Collisions.IntersectingPolygons(mouseRect.vertices, CollisionRect.vertices))
             {
                 isHovering = true;
 

@@ -30,9 +30,8 @@ namespace ProjectilePlayground.Content.controls
         public TextBox textBox;
         public Texture2D cursorTexture;
         public int timeBeforeNextDelete;
-        
-
-        // public
+   
+       // public VerticesRectangle verticesRectangleProperty;
         public event EventHandler<SliderClickEventArgs> Click;
         public List<char> _chars;
         public bool isClicked { get; private set; }
@@ -49,22 +48,24 @@ namespace ProjectilePlayground.Content.controls
         {
             get
             {
-                return new Rectangle((int)barPosition.X,
-                    (int)barPosition.Y,
-                    (int)(barTexture.Width * scale),
-                    (int)(barTexture.Height * scale));
+                return new Rectangle(
+                    (int) barPosition.X,
+                    (int) barPosition.Y,
+                    (int) (barTexture.Width * scale),
+                    (int) (barTexture.Height * scale)
+                    );
             }
         }
 
-        public Rectangle PropertyRect
+        public VerticesRectangle PropertyRect
         {
             get
             {
-                return new Rectangle(
-                    (int)(Rect.X + (Rect.Width / 2) - (font.MeasureString(text_scroller).X / 2)),
-                    (int)(Rect.Y + (Rect.Height / 2) - (font.MeasureString(text_scroller).Y / 2) + 30),
-                    (int)(font.MeasureString(text_scroller).X * scale),
-                    (int)(font.MeasureString(text_scroller).Y * scale));
+                return new VerticesRectangle(
+                    new Vector2((CollisionRect.X + (CollisionRect.Width / 2) - (font.MeasureString(text_scroller).X / 2)), (CollisionRect.Y + (CollisionRect.Height / 2) - (font.MeasureString(text_scroller).Y / 2) + 30)),
+                    font.MeasureString(text_scroller).X,
+                    font.MeasureString(text_scroller).Y,
+                    scale);
             }
         }
 
@@ -77,6 +78,8 @@ namespace ProjectilePlayground.Content.controls
             penColour = Color.Black;
             barPosition = new Vector2(position.X - 30, position.Y);
             _chars = new List<char>();
+            
+      
         }
 
         public bool IsDecimalPoint()
@@ -99,16 +102,16 @@ namespace ProjectilePlayground.Content.controls
 
             if (position.X == BarRect.Left && offset < 0f)
                 return position;
-            else if (position.X == (BarRect.Right-40) && offset > 0f)
+            else if (position.X == (BarRect.Right- (20 * scale)) && offset > 0f)
                 return position;
 
             else
             {
                 // stays within bar
-                if (Rect.Left < BarRect.Left)
+                if (CollisionRect.Left < BarRect.Left)
                     return position = new Vector2(BarRect.Left, position.Y);
-                else if (Rect.Right > BarRect.Right)
-                    return position = new Vector2(BarRect.Right - 40, position.Y);
+                else if (CollisionRect.Right > BarRect.Right)
+                    return position = new Vector2(BarRect.Right - (20 * scale), position.Y);
 
                 else
                     return position = new Vector2(position.X + offset, position.Y);
@@ -123,7 +126,7 @@ namespace ProjectilePlayground.Content.controls
             float percentageBar = value / maxValue;
 
             // find available space on bar
-            float space = (BarRect.Right - (BarRect.Left+ 40));
+            float space = (BarRect.Right - (BarRect.Left+ (20 * scale)));
 
             position = new Vector2((space * percentageBar)  + BarRect.Left, position.Y);
         }
@@ -132,7 +135,7 @@ namespace ProjectilePlayground.Content.controls
         {
 
             // find how far along the scroller is on the bar then calcuate its selected value
-            float wholeBar = BarRect.Right - (BarRect.Left + 40);
+            float wholeBar = BarRect.Right - (BarRect.Left + (20 * scale));
             float scrollerBar = position.X - BarRect.Left;
 
             float pencentageBar = scrollerBar / wholeBar;
@@ -197,14 +200,14 @@ namespace ProjectilePlayground.Content.controls
                 colour = Color.Gray;
 
             spriteBatch.Draw(barTexture, BarRect, Color.White);
-            spriteBatch.Draw(texture, Rect, colour);
+            spriteBatch.Draw(texture, DrawingRect, colour);
 
             // all text stuff
 
             if (!string.IsNullOrEmpty(text_scroller) && !isTexting) // make sure writable text doesn't overlap
             {
-                var x = (Rect.X + (Rect.Width / 2)) - (font.MeasureString(text_scroller).X / 2);
-                var y = (Rect.Y + (Rect.Height / 2)) - (font.MeasureString(text_scroller).Y / 2) + 30;
+                var x = (CollisionRect.X + (CollisionRect.Width / 2)) - (font.MeasureString(text_scroller).X / 2);
+                var y = (CollisionRect.Y + (CollisionRect.Height / 2)) - (font.MeasureString(text_scroller).Y / 2) + 30;
 
                 spriteBatch.DrawString(font, text_scroller, new Vector2(x, y), penColour);
             }
@@ -242,13 +245,15 @@ namespace ProjectilePlayground.Content.controls
             previousKey = currentKey;
             currentKey = Keyboard.GetState();
 
-            var mouseRect = new Rectangle(currentMouse.X, currentMouse.Y, 1, 1);
+            var mouseRect = new VerticesRectangle(new Vector2(currentMouse.X, currentMouse.Y), 1, 1, 1);
+
+            //var mouseRect = new Rectangle(currentMouse.Position.X, currentMouse.Position.Y, 1, 1);
 
             isHovering = false;
 
             // checking if mouse is hovering and or clicking the button
 
-            if (mouseRect.Intersects(Rect) || isDragging)
+            if (Collisions.IntersectingPolygons(mouseRect.vertices, CollisionRect.vertices) || isDragging)
             {
                 isHovering = true;
 
@@ -271,11 +276,11 @@ namespace ProjectilePlayground.Content.controls
             }
 
             // for text inputs
-            if (mouseRect.Intersects(PropertyRect) && (currentMouse.LeftButton == ButtonState.Released) && (previousMouse.LeftButton == ButtonState.Pressed))
+            if (Collisions.IntersectingPolygons(mouseRect.vertices, PropertyRect.vertices) && (currentMouse.LeftButton == ButtonState.Released) && (previousMouse.LeftButton == ButtonState.Pressed) && !isHovering)
             {
                 isTexting = true;
-                var x = (Rect.X + (Rect.Width / 2)) - (font.MeasureString(text_scroller).X / 2);
-                var y = (Rect.Y + (Rect.Height / 2)) - (font.MeasureString(text_scroller).Y / 2) + 30;
+                var x = (CollisionRect.X + (CollisionRect.Width / 2)) - (font.MeasureString(text_scroller).X / 2);
+                var y = (CollisionRect.Y + (CollisionRect.Height / 2)) - (font.MeasureString(text_scroller).Y / 2) + 30;
 
                 textBox = new TextBox(cursorTexture, new Vector2(x,y), 1f, text_scroller, font);
             }
@@ -305,6 +310,10 @@ namespace ProjectilePlayground.Content.controls
                 HandleInput();
             }
 
+            if (isTexting && isDragging) // fixes bug to stop changing values via text when using slider
+            {
+                isTexting = false;
+            }
 
 
             else

@@ -13,19 +13,8 @@ namespace ProjectilePlayground
         private Vector2 wheelPosition;
         private float rotationR;
         private Vector2 textureOrigin;
-        private float rotationD;
+        //private float rotationD;
 
-        public Rectangle SourceRect
-        {
-            get
-            {
-                return new Rectangle(
-                    0,
-                    0,
-                    (int)(texture.Width * scale),
-                    (int)(texture.Height * scale));
-            }
-        }
         public Cannon(Texture2D texture, Vector2 position, float scale, Texture2D barTexture, SpriteFont font, Texture2D cursorTexture, bool isCannon) : base (texture, position, scale, font, barTexture, cursorTexture, isCannon)
         {
             wheelPosition = new Vector2(position.X - 10, position.Y + 10);
@@ -75,14 +64,14 @@ namespace ProjectilePlayground
             if (isHovering)
                 colour = Color.Gray;
 
-            spriteBatch.Draw(texture, Rect, SourceRect, colour, rotationR, textureOrigin, SpriteEffects.None, 0f);
+            spriteBatch.Draw(texture, DrawingRect, SourceRect, colour, rotationR, textureOrigin, SpriteEffects.None, 0f);
             spriteBatch.Draw(barTexture, BarRect, Color.White);
             // all text stuff
 
             if (!string.IsNullOrEmpty(text_scroller) && !isTexting) // make sure writable text doesn't overlap
             {
-                var x = (Rect.X + (Rect.Width / 2)) - (font.MeasureString(text_scroller).X / 2);
-                var y = (Rect.Y + (Rect.Height / 2)) - (font.MeasureString(text_scroller).Y / 2) + 30;
+                var x = (CollisionRect.X + (CollisionRect.Width / 2)) - (font.MeasureString(text_scroller).X / 2);
+                var y = (CollisionRect.Y + (CollisionRect.Height / 2)) - (font.MeasureString(text_scroller).Y / 2) + 30;
 
                 spriteBatch.DrawString(font, text_scroller, new Vector2(x, y), penColour);
             }

@@ -50,7 +50,7 @@ namespace ProjectilePlayground
             if (isHovering) // display properties as well
             {
                 colour = Color.Gray;
-                spriteBatch.Draw(texture, Rect, colour);
+                spriteBatch.Draw(texture, DrawingRect, colour);
                 var x = position.X - 90;
                 // height
                 var yheight = position.Y - 30;
@@ -65,7 +65,7 @@ namespace ProjectilePlayground
 
             else
             {
-                spriteBatch.Draw(texture, Rect, colour);
+                spriteBatch.Draw(texture, DrawingRect, colour);
             }
 
             
@@ -77,9 +77,9 @@ namespace ProjectilePlayground
         {
 
             currentMouse = Mouse.GetState();
-            var mouseRect = new Rectangle(currentMouse.X, currentMouse.Y, 1, 1);
+            var mouseRect = new VerticesRectangle(new Vector2(currentMouse.X, currentMouse.Y), 1, 1, 1);
 
-            if (mouseRect.Intersects(Rect))
+            if (Collisions.IntersectingPolygons(mouseRect.vertices, CollisionRect.vertices))
             {
                 isHovering = true;
             }
