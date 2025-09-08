@@ -48,7 +48,7 @@ namespace ProjectilePlayground
 
             for (int i = 0; i < rectangle.vertices.Length; i++) 
             {
-                Console.WriteLine($"before {rectangle.vertices[i]}");
+                
                 var vertex = rectangle.vertices[i];
                 var vector = vertex - pivot;
 
@@ -61,7 +61,7 @@ namespace ProjectilePlayground
                 {
                     rectangle.vertices[i] -= new Vector2(differenceLengthX, differenceLengthY);
                 }
-                    Console.WriteLine($"after {rectangle.vertices[i]}");
+                    
             }
             return rectangle;
             

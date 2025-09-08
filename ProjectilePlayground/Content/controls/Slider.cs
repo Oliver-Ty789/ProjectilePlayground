@@ -44,6 +44,7 @@ namespace ProjectilePlayground.Content.controls
         public float property {  get; set; }
         public int index { get; set; }
         public float maxValue { get; set; }
+        public float minValue { get; set; }
         public string text_scroller { get; set; }
         public string text_min {  get; set; }
         public string text_max { get; set; }
@@ -88,8 +89,16 @@ namespace ProjectilePlayground.Content.controls
             overallChangeInRotation = 0;
 
         }
-
-        public bool IsDecimalPoint()
+        private bool IsNegative()
+        {
+            foreach (var letter in text_scroller)
+            {
+                if (letter == '-')
+                    return true;
+            }
+            return false;
+        }
+        private bool IsDecimalPoint()
         {
             foreach (var letter in text_scroller)
             {
@@ -129,14 +138,16 @@ namespace ProjectilePlayground.Content.controls
         public virtual void PropertyPlacement(float value) // move scroller to parameter
         {
             // find how far along the scroller should be due to value & maxValue
-
-            float percentageBar = value / maxValue;
-
             // find available space on bar
-            float space = (BarRect.Right - (BarRect.Left+ (20 * scale)));
+            
 
-            position = new Vector2((space * percentageBar)  + BarRect.Left, position.Y);
+            float percentageBar = (value - minValue)/(maxValue-minValue);
+            float space = (BarRect.Right - (BarRect.Left + (20 * scale)));
+
+            position = new Vector2((space * percentageBar) + BarRect.Left, position.Y);
             _collisionRect = new VerticesRectangle(position, texture.Width, texture.Height, scale);
+        
+               
 
         }
 
@@ -144,16 +155,41 @@ namespace ProjectilePlayground.Content.controls
         {
 
             // find how far along the scroller is on the bar then calcuate its selected value
-            float wholeBar = BarRect.Right - (BarRect.Left + (20 * scale));
-            float scrollerBar = position.X - BarRect.Left;
 
-            float pencentageBar = scrollerBar / wholeBar;
+            if (index == 4) // handles negative numbers
+            {
+                float halfBar = BarRect.Right - (BarRect.Left + (10 * scale) + BarRect.Width/2);
+                float scrollerBar = position.X - BarRect.Left;
 
-            if (index == 3)
-                text_scroller = $"{Math.Round(pencentageBar * maxValue, 4)}";
+                float percentageBar = scrollerBar / halfBar;
+
+                if (percentageBar >= 1)
+                {
+                    text_scroller = $"{Math.Round((percentageBar - 1) * maxValue, 1)}";
+                    return (percentageBar - 1) * maxValue;
+                }
+
+                else
+                {
+                    text_scroller = $"{Math.Round((1 - percentageBar) * minValue, 1)}";
+                    return (1 - percentageBar) * minValue;
+                }
+
+            }
             else
-                text_scroller = $"{Math.Round(pencentageBar * maxValue, 1)}";
-            return pencentageBar * maxValue;
+            {
+                float wholeBar = BarRect.Right - (BarRect.Left + (20 * scale));
+                float scrollerBar = position.X - BarRect.Left;
+
+                float percentageBar = scrollerBar / wholeBar;
+
+                if (index == 3)
+                    text_scroller = $"{Math.Round(percentageBar * maxValue, 4)}";
+                else
+                    text_scroller = $"{Math.Round(percentageBar * maxValue, 1)}";
+                return (percentageBar * maxValue) + minValue;
+            }
+                
         }
 
         public void HandleInput()
@@ -193,13 +229,16 @@ namespace ProjectilePlayground.Content.controls
                     {
                         text_scroller = textBox.AddMoreText(value.ToCharArray()[0]);
                     }
-
                 }
                 if (keys[0] == Keys.OemPeriod && !IsDecimalPoint()) // check if decimal point and no other decimal points already there
                 {
                     if (previousKey.IsKeyUp(keys[0]) && currentKey.IsKeyDown(keys[0])) // check if just pressed
                         textBox.AddMoreText('.');
-                        
+                }
+                if (keys[0] == Keys.OemMinus && !IsNegative())
+                {
+                    if (previousKey.IsKeyUp(keys[0]) && currentKey.IsKeyDown(keys[0])) // check if just pressed
+                        textBox.AddMoreText('-');
                 }
             }   
         }

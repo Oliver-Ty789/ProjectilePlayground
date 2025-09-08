@@ -44,6 +44,7 @@ namespace ProjectilePlayground
         float radius;
         float time;
         float dragCoefficient;
+        float angularVelocity;
         DateTime timerStartTime;
 
         // base values
@@ -52,8 +53,7 @@ namespace ProjectilePlayground
         float baseAngle;
         float baseGravity;
         float baseDragCoefficient;
-
-
+        float baseAngularVelocity;
 
         public Game1()
         {
@@ -74,11 +74,12 @@ namespace ProjectilePlayground
             startPos = new Vector2(30, 630);
             scale = 0.25f;
             initial_speed = 15f;
-            mass = 10;
+            mass = 1;
             initial_angle = 40f;
             radius = 0.5f;
             time = 0f;
             dragCoefficient = 0f;
+            angularVelocity = 0f;
 
 
             // slider base properties
@@ -86,6 +87,7 @@ namespace ProjectilePlayground
             baseAngle = 45f;
             baseGravity = 9.81f;
             baseDragCoefficient = 0f;
+            baseAngularVelocity = 0f;
 
 
             base.Initialize();
@@ -126,7 +128,8 @@ namespace ProjectilePlayground
                 text_max = "30 m/s",
                 text_desc = "speed",
                 index = 0,
-                maxValue = 30f
+                maxValue = 30f,
+                minValue = 0,
             };
 
   
@@ -147,6 +150,7 @@ namespace ProjectilePlayground
                 text_desc = "gravity",
                 index = 2,
                 maxValue = 50f,
+                minValue = 0,
             };
 
             gravitySlider.Click += ScrollerClick;
@@ -166,9 +170,30 @@ namespace ProjectilePlayground
                 text_desc = "drag coefficient",
                 index = 3,
                 maxValue = 0.01f,
+                minValue = 0,
             };
 
             dragSlider.Click += ScrollerClick;
+
+            var angularSlider = new Slider(
+                Content.Load<Texture2D>("sprites/scroller"),
+                new Vector2(800, 400),
+                2f,
+                Content.Load<SpriteFont>("fonts/font"),
+                Content.Load<Texture2D>("sprites/sliderbar"),
+                Content.Load<Texture2D>("sprites/flashingCursor"),
+                false)
+            {
+                text_scroller = "na",
+                text_min = "-100 rad/s",
+                text_max = "100 rad/s",
+                text_desc = "angular velocity",
+                index = 4,
+                maxValue = 100f,
+                minValue = -100f,
+            };
+
+            angularSlider.Click += ScrollerClick;
 
             var cannon = new Cannon(
                 Content.Load<Texture2D>("sprites/cannonHead"),
@@ -181,13 +206,14 @@ namespace ProjectilePlayground
             { 
                 text_scroller = "na",
                 index = 1,
-                maxValue = 90f
+                maxValue = 90f,
+                minValue = 0,
             };
 
             cannon.Click += ScrollerClick;
 
 
-            projectile = new Projectile(texture, startPos, scale, baseSpeed, mass, baseAngle, radius, dragCoefficient);
+            projectile = new Projectile(texture, startPos, scale, baseSpeed, mass, baseAngle, radius, dragCoefficient, angularVelocity);
 
             pixelsPerM = projectile.ConversionToSI();
 
@@ -206,6 +232,7 @@ namespace ProjectilePlayground
                 speedSlider,
                 dragSlider,
                 gravitySlider,
+                angularSlider,
                 cannon
             };
 
@@ -232,7 +259,7 @@ namespace ProjectilePlayground
             switch (button.index) // for handling different buttons
             { 
                 case 0: // shoot button
-                    projectile = new Projectile(texture, startPos, scale, initial_speed, mass, initial_angle, radius, dragCoefficient);
+                    projectile = new Projectile(texture, startPos, scale, initial_speed, mass, initial_angle, radius, dragCoefficient, angularVelocity);
                     queuing = true;
 
                     foreach (var clock in _timers)
@@ -250,11 +277,13 @@ namespace ProjectilePlayground
                     _projectileQueue.Enqueue(projectile);
                     break;
 
-                case 1:
+                case 1: // reset button
                     _projectiles.Clear();
                     initial_angle = baseAngle;
                     initial_speed = baseSpeed * pixelsPerM;
                     environment.gravity = new Vector2(0, baseGravity * pixelsPerM);
+                    angularVelocity = baseAngularVelocity;
+                    dragCoefficient = baseDragCoefficient;
                     ResetAllSliders(); // sets position of sliders to correct place
                     break;
                 default:
@@ -280,6 +309,9 @@ namespace ProjectilePlayground
                     break;
                 case 3:
                     dragCoefficient = e.property;
+                    break;
+                case 4:
+                    angularVelocity = e.property;
                     break;
                 default:
                     break;
@@ -329,6 +361,9 @@ namespace ProjectilePlayground
                         break;
                     case 3:
                         slider.PropertyPlacement(baseDragCoefficient);
+                        break;
+                    case 4:
+                        slider.PropertyPlacement(baseAngularVelocity);
                         break;
                     default :
                         break;

@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,15 +23,17 @@ namespace ProjectilePlayground
         public float radius;
         public Vector2 previousVelocity;
         private Vector2 resistiveForce;
+        private Vector2 magnusForce;
         // public float C_of_D; // unimportant at this time
         //public float C_of_E;
-        //public float angluar_velocity;
+        public float angluarVelocity;
+        public Vector2 resultantForce;
 
 
 
         public List<TrailNode> _nodes;
 
-        public Projectile(Texture2D texture, Vector2 position, float scale, float initial_s, int mass, float initial_a, float radius, float dragCoefficient) : base (texture, position, scale)
+        public Projectile(Texture2D texture, Vector2 position, float scale, float initial_s, int mass, float initial_a, float radius, float dragCoefficient, float angularVelocity) : base (texture, position, scale)
         {
             this.mass = mass;
             
@@ -37,6 +41,9 @@ namespace ProjectilePlayground
             this.radius = radius;
             this.initialPos = position;
             this.dragCoefficient = dragCoefficient;
+            this.angluarVelocity = angularVelocity;
+            this.magnusForce = new Vector2(0, 0);
+            this.resultantForce = new Vector2(0, 0);
 
             _nodes = new List<TrailNode> { };
             
@@ -53,32 +60,50 @@ namespace ProjectilePlayground
         {
             // applying a formula to determine drag forces
             var area = radius * MathF.PI;
-            resistiveForce = new Vector2(Convert.ToSingle(dragCoefficient * 0.5 * environment.airPressure * area * MathF.Pow(velocity.X, 2)),
-                Convert.ToSingle(-dragCoefficient * 0.5 * environment.airPressure * area * MathF.Pow(velocity.Y, 2)));
+            resistiveForce = new Vector2(Convert.ToSingle(-dragCoefficient * 0.5 * environment.airPressure * area * MathF.Pow(velocity.X, 2)),
+                Convert.ToSingle(dragCoefficient * 0.5 * environment.airPressure * area * MathF.Pow(velocity.Y, 2)));
+        }
+
+        private void ApplyMagnus()
+        {
+            var unitVelocity = VectorMaths.UnitVector(velocity);
+            var perpendicularVector = new Vector2(-unitVelocity.Y, unitVelocity.X);
+            var magnusForceMag = dragCoefficient * angluarVelocity * VectorMaths.Length(velocity);
+            magnusForce = perpendicularVector * magnusForceMag;
         }
 
         private void ApplyForces(Environment environment, float delta)
         {
+            // gravity
+            resultantForce = environment.gravity * mass;
             
 
-            // gravity
+            // drag
+            resultantForce += resistiveForce;
+            
+
+            // magnus
+            resultantForce += magnusForce;
+            
+
+
             if (position.Y < initialPos.Y + 1 && !(velocity == new Vector2(0,0)))
             {
                 previousVelocity = velocity;
-                velocity += environment.gravity * delta;
+                // F = ma
+                var acceleration = new Vector2(resultantForce.X / mass, resultantForce.Y / mass);
+                Console.WriteLine(acceleration.ToString());
+                velocity += acceleration * delta;
+                
             }
             else
             {
                 velocity = new Vector2(0, 0);
                 resistiveForce = new Vector2(0,0);
+                magnusForce = new Vector2(0, 0);
+                resultantForce = new Vector2(0, 0);
                 position.Y = initialPos.Y;
-                return;
             }
-
-            // drag
-           // Console.WriteLine(resistiveForce);
-            velocity -= resistiveForce * delta;
-            
         }
 
         public float ConversionToSI()
@@ -112,6 +137,7 @@ namespace ProjectilePlayground
 
             float delta = (float)gameTime.ElapsedGameTime.TotalSeconds; // difference in time between frames, keeps velocity/acceleration consitent 
             ApplyDrag(environment);
+            ApplyMagnus();
             ApplyForces(environment, delta);
             ApplyVelocity(delta);
 
