@@ -41,5 +41,30 @@ namespace ProjectilePlayground
             X = position.X;
             Y = position.Y;
         }
+
+        public static VerticesRectangle HandleRotations(VerticesRectangle rectangle, float angle, Vector2 pivot, bool isClockwise)
+        {
+            // move vertices around a pivot
+
+            for (int i = 0; i < rectangle.vertices.Length; i++) 
+            {
+                Console.WriteLine($"before {rectangle.vertices[i]}");
+                var vertex = rectangle.vertices[i];
+                var vector = vertex - pivot;
+
+                var differenceLengthX = vector.X*MathF.Cos(angle) - vector.Y*MathF.Sin(angle);
+                var differenceLengthY = vector.X*MathF.Sin(angle) + vector.Y*MathF.Cos(angle);
+
+                if (isClockwise)
+                    rectangle.vertices[i] += new Vector2(differenceLengthX, differenceLengthY);
+                else
+                {
+                    rectangle.vertices[i] -= new Vector2(differenceLengthX, differenceLengthY);
+                }
+                    Console.WriteLine($"after {rectangle.vertices[i]}");
+            }
+            return rectangle;
+            
+        }
     }
 }

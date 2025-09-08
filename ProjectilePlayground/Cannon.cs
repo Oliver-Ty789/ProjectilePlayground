@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Security.AccessControl;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -13,7 +14,8 @@ namespace ProjectilePlayground
         private Vector2 wheelPosition;
         private float rotationR;
         private Vector2 textureOrigin;
-        //private float rotationD;
+        private VerticesRectangle _collisionRect;
+        
 
         public Cannon(Texture2D texture, Vector2 position, float scale, Texture2D barTexture, SpriteFont font, Texture2D cursorTexture, bool isCannon) : base (texture, position, scale, font, barTexture, cursorTexture, isCannon)
         {
@@ -34,19 +36,43 @@ namespace ProjectilePlayground
             var offsetCurrentMouseMag = MathF.Sqrt(MathF.Pow(offsetCurrentMousePos.X, 2) + MathF.Pow(offsetCurrentMousePos.Y, 2));
             var offsetPreviousMouseMag = MathF.Sqrt(MathF.Pow(offsetPreviousMousePos.X, 2) + MathF.Pow(offsetPreviousMousePos.Y, 2));
             var differenceMouseMag = MathF.Sqrt(MathF.Pow(differenceMousePos.X, 2) + MathF.Pow(differenceMousePos.Y, 2));
+
+            var changeInRotation = MathF.Acos((MathF.Pow(offsetCurrentMouseMag, 2) + MathF.Pow(offsetPreviousMouseMag, 2) - MathF.Pow(differenceMouseMag, 2)) / (2 * offsetCurrentMouseMag * offsetPreviousMouseMag));
+            overallChangeInRotation += changeInRotation;
             
+
             if (offsetCurrentMousePos.Y > offsetPreviousMousePos.Y) // make sure cannon turns with mouse
-                rotationR += MathF.Acos((MathF.Pow(offsetCurrentMouseMag, 2) + MathF.Pow(offsetPreviousMouseMag, 2) - MathF.Pow(differenceMouseMag, 2)) / (2 * offsetCurrentMouseMag * offsetPreviousMouseMag));
+            {
+                rotationR += changeInRotation;
+                isClockwise = true;
+            } 
+               
             else
-                rotationR -= MathF.Acos((MathF.Pow(offsetCurrentMouseMag, 2) + MathF.Pow(offsetPreviousMouseMag, 2) - MathF.Pow(differenceMouseMag, 2)) / (2 * offsetCurrentMouseMag * offsetPreviousMouseMag));
-            if (rotationR < -MathF.PI/2) rotationR = -MathF.PI/2;
-            if (rotationR > 0) rotationR = 0;
+            {
+                rotationR -= changeInRotation;
+                isClockwise = false;
+            }
+              
+            if (rotationR < -MathF.PI/2)
+            {
+                rotationR = -MathF.PI / 2;
+                return;
+            }
+            if (rotationR > 0)
+            {
+                rotationR = 0;
+                return;
+            }
+
+            CollisionRect = _collisionRect;
         }
 
         public override void PropertyPlacement(float value)
         {
             // just change rotation
             rotationR = -(value * (MathF.PI/180));
+            _collisionRect = VerticesRectangle.HandleRotations(CollisionRect, rotationR, textureOrigin + position, true);
+            CollisionRect = _collisionRect;
         }
 
         public override float FindProperty()

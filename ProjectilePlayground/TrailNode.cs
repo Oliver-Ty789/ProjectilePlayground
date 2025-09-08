@@ -19,6 +19,7 @@ namespace ProjectilePlayground
         private Color penColour;
         private bool isHovering;
         private Color colour;
+        private VerticesRectangle _collisionRect;
 
         // public
         public float height;
@@ -34,6 +35,8 @@ namespace ProjectilePlayground
             this.range = range;
             this.isYellow = isYellow;
             this.penColour = Color.Black;
+            _collisionRect = new VerticesRectangle(position, texture.Width, texture.Height, scale);
+            CollisionRect = _collisionRect;
         }
 
         public override void Draw(Microsoft.Xna.Framework.GameTime gameTime, SpriteBatch spriteBatch)

@@ -15,7 +15,9 @@ namespace ProjectilePlayground.Content.controls
         // slider is a special type of button that we are going to manipulate to choose specific values for our projectile
         // need scrollertexture, its own rect, 
 
-        // public
+        // private
+        private VerticesRectangle _collisionRect;
+
         public MouseState currentMouse;
         public MouseState previousMouse;
         public KeyboardState currentKey;
@@ -30,6 +32,9 @@ namespace ProjectilePlayground.Content.controls
         public TextBox textBox;
         public Texture2D cursorTexture;
         public int timeBeforeNextDelete;
+        public float overallChangeInRotation;
+        public bool isClockwise;
+
    
        // public VerticesRectangle verticesRectangleProperty;
         public event EventHandler<SliderClickEventArgs> Click;
@@ -78,8 +83,10 @@ namespace ProjectilePlayground.Content.controls
             penColour = Color.Black;
             barPosition = new Vector2(position.X - 30, position.Y);
             _chars = new List<char>();
-            
-      
+            _collisionRect = new VerticesRectangle(position, texture.Width, texture.Height, scale);
+            CollisionRect = _collisionRect;
+            overallChangeInRotation = 0;
+
         }
 
         public bool IsDecimalPoint()
@@ -129,6 +136,8 @@ namespace ProjectilePlayground.Content.controls
             float space = (BarRect.Right - (BarRect.Left+ (20 * scale)));
 
             position = new Vector2((space * percentageBar)  + BarRect.Left, position.Y);
+            _collisionRect = new VerticesRectangle(position, texture.Width, texture.Height, scale);
+
         }
 
         public virtual float FindProperty()
@@ -187,6 +196,7 @@ namespace ProjectilePlayground.Content.controls
                 {
                     if (previousKey.IsKeyUp(keys[0]) && currentKey.IsKeyDown(keys[0])) // check if just pressed
                         textBox.AddMoreText('.');
+                        
                 }
             }   
         }
@@ -272,6 +282,12 @@ namespace ProjectilePlayground.Content.controls
                 {
                     Click?.Invoke(this, new SliderClickEventArgs(property, index));
                     isDragging = false;
+                    if (isCannon)
+                    {
+                        _collisionRect = VerticesRectangle.HandleRotations(CollisionRect, overallChangeInRotation, new Vector2(0,25)+position, isClockwise);
+                        CollisionRect = _collisionRect;
+                        overallChangeInRotation = 0f;
+                    }
                 }
             }
 
@@ -290,12 +306,12 @@ namespace ProjectilePlayground.Content.controls
                 if (currentKey.GetPressedKeys()[0] == Keys.Enter) // if enter has been clicked, set property 
                 {
                     isTexting = false;
-                    
                     // need to check if value is appropriate
                     float value = Convert.ToSingle(text_scroller);
-                    Console.WriteLine(value);
+                    Console.WriteLine(value.ToString());
                     if (value <= maxValue)
                     {
+
                         PropertyPlacement(value);
                         property = value;
                         Click?.Invoke(this, new SliderClickEventArgs(property, index));
@@ -303,11 +319,15 @@ namespace ProjectilePlayground.Content.controls
                 }
             }
 
-
             if (isTexting)
             {
+                Console.WriteLine(text_scroller);
                 textBox.Update(gameTime, E);
                 HandleInput();
+            }
+            else
+            {
+                property = FindProperty();
             }
 
             if (isTexting && isDragging) // fixes bug to stop changing values via text when using slider
@@ -315,9 +335,13 @@ namespace ProjectilePlayground.Content.controls
                 isTexting = false;
             }
 
-
-            else
-                property = FindProperty();
+            
+            if (!isCannon)
+            {
+                _collisionRect = new VerticesRectangle(position, texture.Width, texture.Height, scale);
+            }
+            
+            CollisionRect = _collisionRect;
 
             base.Update(gameTime, E);
         } 

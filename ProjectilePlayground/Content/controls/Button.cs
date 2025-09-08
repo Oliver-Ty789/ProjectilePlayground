@@ -20,6 +20,7 @@ namespace ProjectilePlayground.Content.controls
         private SpriteFont font;
         private bool isHovering;
         private MouseState previousMouse;
+        private VerticesRectangle _collisionRect;
 
         // public
         public event EventHandler Click;
@@ -33,6 +34,8 @@ namespace ProjectilePlayground.Content.controls
             this.font = font;
             penColour = Color.Black;
             this.index = index;
+            _collisionRect = new VerticesRectangle(position, texture.Width, texture.Height, scale);
+            CollisionRect = _collisionRect;
         }
         public override void Draw(GameTime gameTime ,SpriteBatch spriteBatch)
         {

@@ -26,6 +26,11 @@ namespace ProjectilePlayground
             return new Vector2(vector.X / length, vector.Y / length); // returns a unit vector
         }
 
+        public static Vector2 ToVector2(float length, float angle)
+        {
+            return new Vector2((float)(length * Math.Cos(angle * Math.PI / 180)), -(float)(length * Math.Sin(angle * Math.PI / 180)));
+        }
+
         public static float DotProduct(Vector2 a, Vector2 b)
         {
             // I need a . b = |a||b|*cos(angle between them)

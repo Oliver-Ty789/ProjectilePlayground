@@ -37,8 +37,8 @@ namespace ProjectilePlayground
             this.initialPos = position;
 
             _nodes = new List<TrailNode> { };
-
-            velocity = new Vector2((float)(initial_s * Math.Cos(initial_a * Math.PI / 180)), -(float)(initial_s * Math.Sin(initial_a * Math.PI / 180)));
+            
+            velocity = VectorMaths.ToVector2(initial_s, initial_a);
         }
    
         public void ApplyVelocity(float delta)
