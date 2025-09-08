@@ -14,24 +14,24 @@ namespace ProjectilePlayground
 {
     internal class Projectile : ScaledSprite
     {
-        private Vector2 initialPos;
-
         public int mass;
         public Vector2 velocity;
         public float initialAngle;
         public float dragCoefficient;
         public float radius;
         public Vector2 previousVelocity;
-        private Vector2 resistiveForce;
-        private Vector2 magnusForce;
-        // public float C_of_D; // unimportant at this time
-        //public float C_of_E;
         public float angluarVelocity;
         public Vector2 resultantForce;
-
-
-
+        // public float C_of_D; // unimportant at this time
+        //public float C_of_E;
         public List<TrailNode> _nodes;
+
+        // private
+        private Vector2 resistiveForce;
+        private Vector2 magnusForce;
+        private float spriteRotation;
+        private Vector2 initialPos;
+        private VerticesRectangle _collisionRect;
 
         public Projectile(Texture2D texture, Vector2 position, float scale, float initial_s, int mass, float initial_a, float radius, float dragCoefficient, float angularVelocity) : base (texture, position, scale)
         {
@@ -44,6 +44,8 @@ namespace ProjectilePlayground
             this.angluarVelocity = angularVelocity;
             this.magnusForce = new Vector2(0, 0);
             this.resultantForce = new Vector2(0, 0);
+            _collisionRect = new VerticesRectangle(position, texture.Width, texture.Height, scale);
+            CollisionRect = _collisionRect;
 
             _nodes = new List<TrailNode> { };
             
@@ -94,6 +96,7 @@ namespace ProjectilePlayground
                 var acceleration = new Vector2(resultantForce.X / mass, resultantForce.Y / mass);
                 Console.WriteLine(acceleration.ToString());
                 velocity += acceleration * delta;
+                spriteRotation += angluarVelocity * delta;
                 
             }
             else
@@ -121,13 +124,14 @@ namespace ProjectilePlayground
 
         public override void Draw(GameTime gameTime, SpriteBatch _spriteBatch)
         {
-            _spriteBatch.Draw(texture, DrawingRect, Color.White);
+            var pivot = new Vector2(SourceRect.Width / 2f, SourceRect.Height / 2f);
+            _spriteBatch.Draw(texture, DrawingRect, SourceRect, Color.White, spriteRotation, pivot, SpriteEffects.None, 0f);
 
             foreach (var node in _nodes)
             {
                 node.Draw(gameTime, _spriteBatch);
             }
-            //Console.WriteLine(_nodes.Count());
+            
 
             base.Draw(gameTime, _spriteBatch);
         }

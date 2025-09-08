@@ -71,7 +71,7 @@ namespace ProjectilePlayground
 
             // parameters for first projectile (test)
             texture = Content.Load<Texture2D>("sprites/Final_face_circle");
-            startPos = new Vector2(30, 630);
+            startPos = new Vector2(35, 630);
             scale = 0.25f;
             initial_speed = 15f;
             mass = 1;
@@ -335,7 +335,7 @@ namespace ProjectilePlayground
                     time,
                     VectorMaths.Length(projectile.position - startPos) / pixelsPerM ,
                     texture,
-                    new Vector2(projectile.position.X, projectile.position.Y + 5), // provide offset
+                    new Vector2(projectile.position.X, projectile.position.Y - 4), // provide offset
                     .1f,
                     false
                     );
@@ -402,7 +402,7 @@ namespace ProjectilePlayground
                     (float)(DateTime.Now - timerStartTime).TotalSeconds,
                     VectorMaths.Length(projectile.position - startPos) / pixelsPerM,
                     texture,
-                    new Vector2 (projectile.position.X, projectile.position.Y + 2), // provides an offset to place in middle of path
+                    new Vector2 (projectile.position.X, projectile.position.Y - 6), // provides an offset to place in middle of path
                     .15f,
                     true
                     );

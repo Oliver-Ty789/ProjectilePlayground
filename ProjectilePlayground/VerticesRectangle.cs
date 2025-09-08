@@ -21,6 +21,7 @@ namespace ProjectilePlayground
         public float Height;
         public float X;
         public float Y;
+        public Vector2 Center;
         
         public VerticesRectangle(Vector2 position, float width, float height, float scale)
         {
@@ -40,6 +41,7 @@ namespace ProjectilePlayground
             Height = height * scale; 
             X = position.X;
             Y = position.Y;
+            Center = new Vector2(width*scale/2, height*scale/2);
         }
 
         public static VerticesRectangle HandleRotations(VerticesRectangle rectangle, float angle, Vector2 pivot, bool isClockwise)
