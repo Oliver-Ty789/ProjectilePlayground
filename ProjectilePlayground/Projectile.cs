@@ -17,9 +17,10 @@ namespace ProjectilePlayground
         public int mass;
         public Vector2 velocity;
         public float initialAngle;
-        //private Vector2 Force;
+        public float dragCoefficient;
         public float radius;
         public Vector2 previousVelocity;
+        private Vector2 resistiveForce;
         // public float C_of_D; // unimportant at this time
         //public float C_of_E;
         //public float angluar_velocity;
@@ -28,27 +29,38 @@ namespace ProjectilePlayground
 
         public List<TrailNode> _nodes;
 
-        public Projectile(Texture2D texture, Vector2 position, float scale, float initial_s, int mass, float initial_a, float radius) : base (texture, position, scale)
+        public Projectile(Texture2D texture, Vector2 position, float scale, float initial_s, int mass, float initial_a, float radius, float dragCoefficient) : base (texture, position, scale)
         {
             this.mass = mass;
             
             this.initialAngle = initial_a;
             this.radius = radius;
             this.initialPos = position;
+            this.dragCoefficient = dragCoefficient;
 
             _nodes = new List<TrailNode> { };
             
             velocity = VectorMaths.ToVector2(initial_s, initial_a);
         }
    
-        public void ApplyVelocity(float delta)
+        private void ApplyVelocity(float delta)
         {
             this.position += this.velocity*delta;
 
         }
 
-        public void ApplyForces(Environment environment, float delta)
+        private void ApplyDrag(Environment environment)
         {
+            // applying a formula to determine drag forces
+            var area = radius * MathF.PI;
+            resistiveForce = new Vector2(Convert.ToSingle(dragCoefficient * 0.5 * environment.airPressure * area * MathF.Pow(velocity.X, 2)),
+                Convert.ToSingle(-dragCoefficient * 0.5 * environment.airPressure * area * MathF.Pow(velocity.Y, 2)));
+        }
+
+        private void ApplyForces(Environment environment, float delta)
+        {
+            
+
             // gravity
             if (position.Y < initialPos.Y + 1 && !(velocity == new Vector2(0,0)))
             {
@@ -58,8 +70,15 @@ namespace ProjectilePlayground
             else
             {
                 velocity = new Vector2(0, 0);
+                resistiveForce = new Vector2(0,0);
                 position.Y = initialPos.Y;
+                return;
             }
+
+            // drag
+           // Console.WriteLine(resistiveForce);
+            velocity -= resistiveForce * delta;
+            
         }
 
         public float ConversionToSI()
@@ -92,8 +111,10 @@ namespace ProjectilePlayground
         {
 
             float delta = (float)gameTime.ElapsedGameTime.TotalSeconds; // difference in time between frames, keeps velocity/acceleration consitent 
+            ApplyDrag(environment);
             ApplyForces(environment, delta);
             ApplyVelocity(delta);
+
 
             // for trail nodes
             foreach (var node in _nodes)

@@ -149,7 +149,10 @@ namespace ProjectilePlayground.Content.controls
 
             float pencentageBar = scrollerBar / wholeBar;
 
-            text_scroller = $"{Math.Round(pencentageBar * maxValue, 1)}";
+            if (index == 3)
+                text_scroller = $"{Math.Round(pencentageBar * maxValue, 4)}";
+            else
+                text_scroller = $"{Math.Round(pencentageBar * maxValue, 1)}";
             return pencentageBar * maxValue;
         }
 
@@ -238,7 +241,7 @@ namespace ProjectilePlayground.Content.controls
             if (!string.IsNullOrEmpty(text_desc))
             {
                 var x = (BarRect.Left - (font.MeasureString(text_scroller).X / 2)) - 100;
-                var y = BarRect.Y + (font.MeasureString(text_scroller).Y / 2);
+                var y = BarRect.Y + (font.MeasureString(text_scroller).Y / 2) - 20;
 
                 spriteBatch.DrawString(font, text_desc, new Vector2(x, y), penColour);
             }
@@ -308,7 +311,7 @@ namespace ProjectilePlayground.Content.controls
                     isTexting = false;
                     // need to check if value is appropriate
                     float value = Convert.ToSingle(text_scroller);
-                    Console.WriteLine(value.ToString());
+                   
                     if (value <= maxValue)
                     {
 
@@ -321,7 +324,7 @@ namespace ProjectilePlayground.Content.controls
 
             if (isTexting)
             {
-                Console.WriteLine(text_scroller);
+                
                 textBox.Update(gameTime, E);
                 HandleInput();
             }

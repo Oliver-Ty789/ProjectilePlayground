@@ -11,11 +11,13 @@ namespace ProjectilePlayground
     internal class Environment
     {
         public Vector2 gravity;
+        public readonly float airPressure;
         //public string playstate;
         //public Vector2 Wind;
-        public Environment(Vector2 gravity) 
+        public Environment(Vector2 gravity, float airPressure) 
         { 
             this.gravity = gravity;
+            this.airPressure = airPressure;
         }
     }
 }
