@@ -17,12 +17,14 @@ namespace ProjectilePlayground.Content.controls
 
         // private
         private MouseState currentMouse;
-        private SpriteFont font;
         private bool isHovering;
         private MouseState previousMouse;
         private VerticesRectangle _collisionRect;
 
         // public
+        public Color colour;
+        public SpriteFont font;
+        public bool isTicked;
         public event EventHandler Click;
         public bool isClicked { get; private set; }
         public Color penColour { get; set; }
@@ -39,14 +41,14 @@ namespace ProjectilePlayground.Content.controls
         }
         public override void Draw(GameTime gameTime ,SpriteBatch spriteBatch)
         {
-            var colour = Color.White;
+            colour = Color.White;
 
             if (isHovering)
                 colour = Color.Gray;
 
             spriteBatch.Draw(texture, DrawingRect, colour);
 
-            if (!string.IsNullOrEmpty(text))
+            if (!string.IsNullOrEmpty(text) && !(index == 2))
             {
                 var x = (CollisionRect.X + (CollisionRect.Width / 2)) - (font.MeasureString(text).X / 2);
                 var y = (CollisionRect.Y + (CollisionRect.Height / 2)) - (font.MeasureString(text).Y / 2);
@@ -72,6 +74,12 @@ namespace ProjectilePlayground.Content.controls
 
                 if ((currentMouse.LeftButton == ButtonState.Released) && (previousMouse.LeftButton == ButtonState.Pressed))
                 {
+                    if (index == 2)
+                        if (isTicked)   
+                            isTicked = false;
+                        else
+                            isTicked = true;
+
                     Click?.Invoke(this, new EventArgs());
                 }
             }

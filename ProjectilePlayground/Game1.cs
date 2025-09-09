@@ -32,6 +32,9 @@ namespace ProjectilePlayground
         Environment environment;
 
         float pixelsPerM;
+
+        // for hiding UI elements
+        private bool isVisibleSliders;
         
         // parameters for the projectile
 
@@ -89,6 +92,9 @@ namespace ProjectilePlayground
             baseDragCoefficient = 0f;
             baseAngularVelocity = 0f;
 
+            // making UI visible
+            isVisibleSliders = true;
+
 
             base.Initialize();
         }
@@ -114,6 +120,13 @@ namespace ProjectilePlayground
 
             resetButton.Click += Button_Click;
 
+            var tickProjectilesButton = new TickBox(Content.Load<Texture2D>("sprites/tickBox"), new Vector2(800, 50), 0.1f, Content.Load<SpriteFont>("fonts/font"), 2, Content.Load<Texture2D>("sprites/tick"))
+            {
+                text = "HIDE UI"
+            };
+
+            tickProjectilesButton.Click += Button_Click;
+
 
             var speedSlider = new Slider(Content.Load<Texture2D>("sprites/scroller"), 
                 new Vector2(800, 300), 
@@ -125,10 +138,10 @@ namespace ProjectilePlayground
             { 
                 text_scroller = "na" ,
                 text_min = "0 m/s",
-                text_max = "30 m/s",
+                text_max = "50 m/s",
                 text_desc = "speed",
                 index = 0,
-                maxValue = 30f,
+                maxValue = 50f,
                 minValue = 0,
             };
 
@@ -225,6 +238,7 @@ namespace ProjectilePlayground
             { 
                 shootButton,
                 resetButton,
+                tickProjectilesButton,
             };
 
             _sliders = new Slider[]
@@ -285,6 +299,12 @@ namespace ProjectilePlayground
                     angularVelocity = baseAngularVelocity;
                     dragCoefficient = baseDragCoefficient;
                     ResetAllSliders(); // sets position of sliders to correct place
+                    break;
+                case 2:
+                    if (isVisibleSliders)
+                        isVisibleSliders = false;
+                    else
+                        isVisibleSliders = true;
                     break;
                 default:
                     break;
@@ -383,10 +403,11 @@ namespace ProjectilePlayground
             {
                 button.Update(gameTime, environment);
             }
-            foreach (var slider in _sliders)
-            {
-                slider.Update(gameTime, environment);
-            }
+            if (isVisibleSliders)
+                foreach (var slider in _sliders)
+                {
+                    slider.Update(gameTime, environment);
+                }
 
             foreach (var projectile in _projectiles)
             {
@@ -450,10 +471,11 @@ namespace ProjectilePlayground
             {
                 button.Draw(gameTime, _spriteBatch);
             }
-            foreach (var slider in _sliders)
-            {
-                slider.Draw(gameTime, _spriteBatch);
-            }
+            if (isVisibleSliders)
+                foreach (var slider in _sliders)
+                {
+                    slider.Draw(gameTime, _spriteBatch);
+                }
 
             _spriteBatch.End();
 
