@@ -18,6 +18,7 @@ namespace ProjectilePlayground
         public Vector2 velocity;
         public float initialAngle;
         public float dragCoefficient;
+        public float angularDragCoefficient;
         public float radius;
         public Vector2 previousVelocity;
         public float angluarVelocity;
@@ -27,13 +28,14 @@ namespace ProjectilePlayground
         public List<TrailNode> _nodes;
 
         // private
-        private Vector2 resistiveForce;
+        private Vector2 resistiveLinearForce;
+        private float resistiveAngularForce;
         private Vector2 magnusForce;
         private float spriteRotation;
         private Vector2 initialPos;
         private VerticesRectangle _collisionRect;
 
-        public Projectile(Texture2D texture, Vector2 position, float scale, float initial_s, int mass, float initial_a, float radius, float dragCoefficient, float angularVelocity) : base (texture, position, scale)
+        public Projectile(Texture2D texture, Vector2 position, float scale, float initial_s, int mass, float initial_a, float radius, float dragCoefficient, float angularVelocity, float angularDragCoefficient) : base (texture, position, scale)
         {
             this.mass = mass;
             
@@ -42,6 +44,7 @@ namespace ProjectilePlayground
             this.initialPos = position;
             this.dragCoefficient = dragCoefficient;
             this.angluarVelocity = angularVelocity;
+            this.angularDragCoefficient = angularDragCoefficient;
             this.magnusForce = new Vector2(0, 0);
             this.resultantForce = new Vector2(0, 0);
             _collisionRect = new VerticesRectangle(position, texture.Width, texture.Height, scale);
@@ -62,8 +65,10 @@ namespace ProjectilePlayground
         {
             // applying a formula to determine drag forces
             var area = radius * MathF.PI;
-            resistiveForce = new Vector2(Convert.ToSingle(-dragCoefficient * 0.5 * environment.airPressure * area * MathF.Pow(velocity.X, 2)),
+            resistiveLinearForce = new Vector2(Convert.ToSingle(-dragCoefficient * 0.5 * environment.airPressure * area * MathF.Pow(velocity.X, 2)),
                 Convert.ToSingle(dragCoefficient * 0.5 * environment.airPressure * area * MathF.Pow(velocity.Y, 2)));
+
+            resistiveAngularForce = Convert.ToSingle(0.5 * angularDragCoefficient * MathF.Pow(angluarVelocity, 2) * environment.airPressure * area);
         }
 
         private void ApplyMagnus()
@@ -72,6 +77,7 @@ namespace ProjectilePlayground
             var perpendicularVector = new Vector2(-unitVelocity.Y, unitVelocity.X);
             var magnusForceMag = dragCoefficient * angluarVelocity * VectorMaths.Length(velocity);
             magnusForce = perpendicularVector * magnusForceMag;
+            //Console.WriteLine(dragCoefficient);
         }
 
         private void ApplyForces(Environment environment, float delta)
@@ -81,7 +87,7 @@ namespace ProjectilePlayground
             
 
             // drag
-            resultantForce += resistiveForce;
+            resultantForce += resistiveLinearForce;
             
 
             // magnus
@@ -94,15 +100,18 @@ namespace ProjectilePlayground
                 previousVelocity = velocity;
                 // F = ma
                 var acceleration = new Vector2(resultantForce.X / mass, resultantForce.Y / mass);
-                Console.WriteLine(acceleration.ToString());
-                velocity += acceleration * delta;
-                spriteRotation += angluarVelocity * delta;
                 
+                velocity += acceleration * delta;
+                if (angluarVelocity > 0)
+                    angluarVelocity -= resistiveAngularForce;
+                else
+                    angluarVelocity += resistiveAngularForce;
+                spriteRotation += angluarVelocity * delta;
             }
             else
             {
                 velocity = new Vector2(0, 0);
-                resistiveForce = new Vector2(0,0);
+                resistiveLinearForce = new Vector2(0,0);
                 magnusForce = new Vector2(0, 0);
                 resultantForce = new Vector2(0, 0);
                 position.Y = initialPos.Y;

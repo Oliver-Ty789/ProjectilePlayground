@@ -183,7 +183,7 @@ namespace ProjectilePlayground.Content.controls
 
                 float percentageBar = scrollerBar / wholeBar;
 
-                if (index == 3)
+                if (index == 3 || index == 5)
                     text_scroller = $"{Math.Round(percentageBar * maxValue, 4)}";
                 else
                     text_scroller = $"{Math.Round(percentageBar * maxValue, 1)}";
