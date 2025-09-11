@@ -64,7 +64,7 @@ namespace ProjectilePlayground
         private void ApplyDrag(Environment environment)
         {
             // applying a formula to determine drag forces
-            var area = radius * MathF.PI;
+            var area = MathF.Pow(radius,2) * MathF.PI;
             resistiveLinearForce = new Vector2(Convert.ToSingle(-dragCoefficient * 0.5 * environment.airPressure * area * MathF.Pow(velocity.X, 2)),
                 Convert.ToSingle(dragCoefficient * 0.5 * environment.airPressure * area * MathF.Pow(velocity.Y, 2)));
 
