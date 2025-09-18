@@ -34,6 +34,7 @@ namespace ProjectilePlayground.Content.controls
         public int timeBeforeNextDelete;
         public float overallChangeInRotation;
         public bool isClockwise;
+        public Vector2 rectOffset; // for matching placement of sprite
 
    
        // public VerticesRectangle verticesRectangleProperty;
@@ -87,6 +88,7 @@ namespace ProjectilePlayground.Content.controls
             _collisionRect = new VerticesRectangle(position, texture.Width, texture.Height, scale);
             CollisionRect = _collisionRect;
             overallChangeInRotation = 0;
+            rectOffset = new Vector2(0,0);
 
         }
         private bool IsNegative()
@@ -145,6 +147,7 @@ namespace ProjectilePlayground.Content.controls
             float space = (BarRect.Right - (BarRect.Left + (20 * scale)));
 
             position = new Vector2((space * percentageBar) + BarRect.Left, position.Y);
+    
             _collisionRect = new VerticesRectangle(position, texture.Width, texture.Height, scale);
         
                
@@ -314,7 +317,11 @@ namespace ProjectilePlayground.Content.controls
                     
                     // used the change in postion between the current and previous mousestates to determine how far to move the scroller
                     if (!isCannon)
+                    {
                         position = ScrollerMovement(position);
+                        _collisionRect = new VerticesRectangle(position, texture.Width, texture.Height, scale);
+                        
+                    }
                     isDragging = true;
                 }
 
@@ -325,8 +332,9 @@ namespace ProjectilePlayground.Content.controls
                     Click?.Invoke(this, new SliderClickEventArgs(property, index));
                     isDragging = false;
                     if (isCannon)
-                    {
-                        _collisionRect = VerticesRectangle.HandleRotations(CollisionRect, overallChangeInRotation, new Vector2(0,25)+position, isClockwise);
+                    { 
+                          
+                        _collisionRect = VerticesRectangle.GetTransformedRectangle(CollisionRect, overallChangeInRotation, new Vector2(0,0), new Vector2(0, 10) + position, 1f);
                         CollisionRect = _collisionRect;
                         overallChangeInRotation = 0f;
                     }
@@ -377,13 +385,8 @@ namespace ProjectilePlayground.Content.controls
                 isTexting = false;
             }
 
-            
             if (!isCannon)
-            {
-                _collisionRect = new VerticesRectangle(position, texture.Width, texture.Height, scale);
-            }
-            
-            CollisionRect = _collisionRect;
+                CollisionRect = _collisionRect;
 
             base.Update(gameTime, E);
         } 

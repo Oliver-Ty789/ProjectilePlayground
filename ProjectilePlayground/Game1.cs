@@ -35,6 +35,13 @@ namespace ProjectilePlayground
 
         // for hiding UI elements
         private bool isVisibleSliders;
+
+        // for pause screen
+        private bool isPaused;
+        private KeyboardState currentKeys;
+        private KeyboardState previousKeys;
+        private Button menuButton;
+
         
         // parameters for the projectile
 
@@ -99,6 +106,10 @@ namespace ProjectilePlayground
             // making UI visible
             isVisibleSliders = true;
 
+            // pause screen
+            
+            isPaused = false;
+
 
             base.Initialize();
         }
@@ -130,6 +141,11 @@ namespace ProjectilePlayground
             };
 
             tickProjectilesButton.Click += Button_Click;
+
+            menuButton = new Button(Content.Load<Texture2D>("sprites/Button"), new Vector2(50, 100), 8f, Content.Load<SpriteFont>("fonts/font"), 1)
+            {
+                text = "PRESS 'm' TO RETURN TO SIM \n \n PRESS 'esc' TO EXIT PROGRAM",
+            };
 
 
             var speedSlider = new Slider(Content.Load<Texture2D>("sprites/scroller"), 
@@ -427,73 +443,87 @@ namespace ProjectilePlayground
         {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
+            previousKeys = currentKeys;
+            currentKeys = Keyboard.GetState();
+
+            if (previousKeys.IsKeyDown(Keys.M) && currentKeys.IsKeyUp(Keys.M))
+            {
+                if (isPaused)
+                {
+                    isPaused = false;
+
+                }
+                else
+                    isPaused = true;
+            }
 
             // TODO: Add your update logic here
-
-            foreach (var button in _buttons)
+            if (!isPaused)
             {
-                button.Update(gameTime, environment);
-            }
-            if (isVisibleSliders)
-                foreach (var slider in _sliders)
+                foreach (var button in _buttons)
                 {
-                    slider.Update(gameTime, environment);
+                    button.Update(gameTime, environment);
+                }
+                if (isVisibleSliders)
+                    foreach (var slider in _sliders)
+                    {
+                        slider.Update(gameTime, environment);
+                    }
+
+                foreach (var projectile in _projectiles)
+                {
+                    projectile.Update(gameTime, environment);
                 }
 
-            foreach (var projectile in _projectiles)
-            {
-                projectile.Update(gameTime, environment);
-            }
 
-
-            if (projectile.previousVelocity.Y < 0 &&  projectile.velocity.Y > 0) // adding trail node at highest point
-            {
-                TrailNode node = new TrailNode(
-                    Content.Load<SpriteFont>("fonts/font"),
-                    (startPos - projectile.position).Y / pixelsPerM,
-                    (float)(DateTime.Now - timerStartTime).TotalSeconds,
-                    VectorMaths.Length(projectile.position - startPos) / pixelsPerM,
-                    texture,
-                    new Vector2 (projectile.position.X, projectile.position.Y - 6), // provides an offset to place in middle of path
-                    .15f,
-                    true
-                    );
-                _nodeQueue.Enqueue(node);
-                tickqueuing = true;
-            }
-
-            if (queuing) // add projectile to projectile list
-            {
-                foreach (var projectile in _projectileQueue)
+                if (projectile.previousVelocity.Y < 0 && projectile.velocity.Y > 0) // adding trail node at highest point
                 {
-                    _projectiles.Clear();
-                    _projectiles.Add(projectile);
+                    TrailNode node = new TrailNode(
+                        Content.Load<SpriteFont>("fonts/font"),
+                        (startPos - projectile.position).Y / pixelsPerM,
+                        (float)(DateTime.Now - timerStartTime).TotalSeconds,
+                        VectorMaths.Length(projectile.position - startPos) / pixelsPerM,
+                        texture,
+                        new Vector2(projectile.position.X, projectile.position.Y - 6), // provides an offset to place in middle of path
+                        .15f,
+                        true
+                        );
+                    _nodeQueue.Enqueue(node);
+                    tickqueuing = true;
                 }
-                queuing = false;
-                _projectileQueue.Clear();
-            }
-            if (tickqueuing) // add node to projectile
-            {
-                foreach (var node in _nodeQueue)
+
+                if (queuing) // add projectile to projectile list
                 {
-                    projectile._nodes.Add(node);
+                    foreach (var projectile in _projectileQueue)
+                    {
+                        _projectiles.Clear();
+                        _projectiles.Add(projectile);
+                    }
+                    queuing = false;
+                    _projectileQueue.Clear();
                 }
-                tickqueuing = false;
-                _nodeQueue.Clear();
+                if (tickqueuing) // add node to projectile
+                {
+                    foreach (var node in _nodeQueue)
+                    {
+                        projectile._nodes.Add(node);
+                    }
+                    tickqueuing = false;
+                    _nodeQueue.Clear();
+                }
             }
-
-
-
                 base.Update(gameTime);
         }
 
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.CornflowerBlue);
+            if (!isPaused)
+                GraphicsDevice.Clear(Color.CornflowerBlue);
+            else
+                GraphicsDevice.Clear(Color.LightSlateGray);
+                // TODO: Add your drawing code here
 
-            // TODO: Add your drawing code here
-
-            _spriteBatch.Begin(samplerState: SamplerState.LinearWrap);
+                _spriteBatch.Begin(samplerState: SamplerState.LinearWrap);
             foreach (var projectile in _projectiles)
             {
                 projectile.Draw(gameTime, _spriteBatch);
@@ -507,6 +537,9 @@ namespace ProjectilePlayground
                 {
                     slider.Draw(gameTime, _spriteBatch);
                 }
+
+            if (isPaused)
+                menuButton.Draw(gameTime, _spriteBatch);
 
             _spriteBatch.End();
 
