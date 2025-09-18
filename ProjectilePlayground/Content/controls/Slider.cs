@@ -359,7 +359,7 @@ namespace ProjectilePlayground.Content.controls
                     // need to check if value is appropriate
                     float value = Convert.ToSingle(text_scroller);
                    
-                    if (value <= maxValue)
+                    if (value <= maxValue && value >= minValue)
                     {
 
                         PropertyPlacement(value);
