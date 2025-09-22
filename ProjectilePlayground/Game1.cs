@@ -56,6 +56,7 @@ namespace ProjectilePlayground
         float dragCoefficient;
         float angularVelocity;
         float angularDragCoefficient;
+        float restitution;
         DateTime timerStartTime;
 
         // base values
@@ -93,6 +94,7 @@ namespace ProjectilePlayground
             dragCoefficient = 0f;
             angularVelocity = 0f;
             angularDragCoefficient = 0f;
+            restitution = 0f;
 
 
             // slider base properties
@@ -266,7 +268,7 @@ namespace ProjectilePlayground
             cannon.Click += ScrollerClick;
 
 
-            projectile = new Projectile(texture, startPos, scale, baseSpeed, mass, baseAngle, radius, dragCoefficient, angularVelocity, angularDragCoefficient);
+            projectile = new Projectile(texture, startPos, scale, baseSpeed, mass, baseAngle, radius, dragCoefficient, angularVelocity, angularDragCoefficient, restitution);
 
             pixelsPerM = projectile.ConversionToSI();
 
@@ -314,7 +316,7 @@ namespace ProjectilePlayground
             switch (button.index) // for handling different buttons
             { 
                 case 0: // shoot button
-                    projectile = new Projectile(texture, startPos, scale, initial_speed, mass, initial_angle, radius, dragCoefficient, angularVelocity, angularDragCoefficient);
+                    projectile = new Projectile(texture, startPos, scale, initial_speed, mass, initial_angle, radius, dragCoefficient, angularVelocity, angularDragCoefficient, restitution);
                     queuing = true;
 
                     foreach (var clock in _timers)
@@ -387,7 +389,7 @@ namespace ProjectilePlayground
         private void Tick(object sender, ElapsedEventArgs e)
         {
 
-            if (projectile.velocity == new Vector2(0, 0))
+            if (projectile.body.linearVelocity == new Vector2(0, 0))
             {
             }
             else
@@ -476,7 +478,7 @@ namespace ProjectilePlayground
                 }
 
 
-                if (projectile.previousVelocity.Y < 0 && projectile.velocity.Y > 0) // adding trail node at highest point
+                if (projectile.previousVelocity.Y < 0 && projectile.body.linearVelocity.Y > 0) // adding trail node at highest point
                 {
                     TrailNode node = new TrailNode(
                         Content.Load<SpriteFont>("fonts/font"),

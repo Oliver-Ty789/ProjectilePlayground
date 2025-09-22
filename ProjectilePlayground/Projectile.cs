@@ -15,7 +15,7 @@ namespace ProjectilePlayground
     sealed class Projectile : ScaledSprite
     {
         public int mass;
-        public Vector2 velocity;
+        public Vector2 initialVelocity;
         public float initialAngle;
         public float dragCoefficient;
         public float angularDragCoefficient;
@@ -26,6 +26,7 @@ namespace ProjectilePlayground
         // public float C_of_D; // unimportant at this time
         //public float C_of_E;
         public List<TrailNode> _nodes;
+        public RigidBody body;
 
         // private
         private Vector2 resistiveLinearForce;
@@ -34,8 +35,9 @@ namespace ProjectilePlayground
         private float spriteRotation;
         private Vector2 initialPos;
         private VerticesRectangle _collisionRect;
+        
 
-        public Projectile(Texture2D texture, Vector2 position, float scale, float initial_s, int mass, float initial_a, float radius, float dragCoefficient, float angularVelocity, float angularDragCoefficient) : base (texture, position, scale)
+        public Projectile(Texture2D texture, Vector2 position, float scale, float initial_s, int mass, float initial_a, float radius, float dragCoefficient, float angularVelocity, float angularDragCoefficient, float restitution) : base (texture, position, scale)
         {
             this.mass = mass;
             
@@ -49,33 +51,30 @@ namespace ProjectilePlayground
             this.resultantForce = new Vector2(0, 0);
             _collisionRect = new VerticesRectangle(position, texture.Width, texture.Height, scale);
             CollisionRect = _collisionRect;
+            initialVelocity = VectorMaths.ToVector2(initial_s, initial_a);
+
+            body = RigidBody.CreateCircleBody(texture, position, scale, initialVelocity, restitution, radius, mass, false);
 
             _nodes = new List<TrailNode> { };
             
-            velocity = VectorMaths.ToVector2(initial_s, initial_a);
-        }
-   
-        private void ApplyVelocity(float delta)
-        {
-            this.position += this.velocity*delta;
-
+            
         }
 
         private void ApplyDrag(Environment environment)
         {
             // applying a formula to determine drag forces
             var area = MathF.Pow(radius,2) * MathF.PI;
-            resistiveLinearForce = new Vector2(Convert.ToSingle(-dragCoefficient * 0.5 * environment.airPressure * area * MathF.Pow(velocity.X, 2)),
-                Convert.ToSingle(dragCoefficient * 0.5 * environment.airPressure * area * MathF.Pow(velocity.Y, 2)));
+            resistiveLinearForce = new Vector2(Convert.ToSingle(-dragCoefficient * 0.5 * environment.airPressure * area * MathF.Pow(body.linearVelocity.X, 2)),
+                Convert.ToSingle(dragCoefficient * 0.5 * environment.airPressure * area * MathF.Pow(body.linearVelocity.Y, 2)));
 
             resistiveAngularForce = Convert.ToSingle(0.5 * angularDragCoefficient * MathF.Pow(angluarVelocity, 2) * environment.airPressure * area);
         }
 
         private void ApplyMagnus()
         {
-            var unitVelocity = VectorMaths.UnitVector(velocity);
+            var unitVelocity = VectorMaths.UnitVector(body.linearVelocity);
             var perpendicularVector = new Vector2(-unitVelocity.Y, unitVelocity.X);
-            var magnusForceMag = dragCoefficient * angluarVelocity * VectorMaths.Length(velocity);
+            var magnusForceMag = dragCoefficient * angluarVelocity * VectorMaths.Length(body.linearVelocity);
             magnusForce = perpendicularVector * magnusForceMag;
             //Console.WriteLine(dragCoefficient);
         }
@@ -95,13 +94,13 @@ namespace ProjectilePlayground
             
 
 
-            if (position.Y < initialPos.Y + 1 && !(velocity == new Vector2(0,0)))
+            if (position.Y < initialPos.Y + 1 && !(body.linearVelocity == new Vector2(0,0)))
             {
-                previousVelocity = velocity;
+                previousVelocity = body.linearVelocity;
                 // F = ma
                 var acceleration = new Vector2(resultantForce.X / mass, resultantForce.Y / mass);
                 
-                velocity += acceleration * delta;
+                body.linearVelocity += acceleration * delta;
                 if (angluarVelocity > 0)
                     angluarVelocity -= resistiveAngularForce;
                 else
@@ -110,7 +109,7 @@ namespace ProjectilePlayground
             }
             else
             {
-                velocity = new Vector2(0, 0);
+                body.linearVelocity = new Vector2(0, 0);
                 resistiveLinearForce = new Vector2(0,0);
                 magnusForce = new Vector2(0, 0);
                 resultantForce = new Vector2(0, 0);
@@ -134,6 +133,7 @@ namespace ProjectilePlayground
         public override void Draw(GameTime gameTime, SpriteBatch _spriteBatch)
         {
             var pivot = new Vector2(SourceRect.Width / 2f, SourceRect.Height / 2f);
+            position = body.position;
             _spriteBatch.Draw(texture, DrawingRect, SourceRect, Color.White, spriteRotation, pivot, SpriteEffects.None, 0f);
 
             foreach (var node in _nodes)
@@ -152,7 +152,9 @@ namespace ProjectilePlayground
             ApplyDrag(environment);
             ApplyMagnus();
             ApplyForces(environment, delta);
-            ApplyVelocity(delta);
+            //ApplyVelocity(delta);
+
+            body.Update(gameTime, environment);
 
 
             // for trail nodes

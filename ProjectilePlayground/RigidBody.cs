@@ -71,11 +71,27 @@ namespace ProjectilePlayground
             return new RigidBody(texture, position, scale, linearVelocity, mass, restitution, area, isStatic, 0f, width, height, ShapeType.Circle);
         }
 
+
+        private void ApplyVelocity(float delta)
+        {
+            position += linearVelocity * delta;
+
+        }
+
         public override void Draw(GameTime gameTime, SpriteBatch spriteBatch)
         {
             spriteBatch.Draw(texture, DrawingRect, SourceRect, Color.White);
 
             base.Draw(gameTime, spriteBatch);
+        }
+
+        public override void Update(GameTime gameTime, Environment environment)
+        {
+            float delta = (float)gameTime.ElapsedGameTime.TotalSeconds; // difference in time between frames, keeps velocity/acceleration consitent
+            ApplyVelocity(delta);
+
+
+            base.Update(gameTime, environment);
         }
     }
 }
