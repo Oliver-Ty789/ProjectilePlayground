@@ -12,7 +12,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace ProjectilePlayground
 {
-    internal class Projectile : ScaledSprite
+    sealed class Projectile : ScaledSprite
     {
         public int mass;
         public Vector2 velocity;

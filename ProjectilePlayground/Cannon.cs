@@ -117,12 +117,12 @@ namespace ProjectilePlayground
             if (isTexting)
                 textBox.Draw(gameTime, spriteBatch);
 
-            for (int i = 0; i < CollisionRect.vertices.Length; i++) // for debugging collision rectangle
-            {
-                var point1 = CollisionRect.vertices[i];
-                var point2 = CollisionRect.vertices[(i + 1)%4];
-                Primitives2D.DrawLine(spriteBatch, point1, point2, Color.White);
-            }
+            //for (int i = 0; i < CollisionRect.vertices.Length; i++) // for debugging collision rectangle
+            //{
+            //    var point1 = CollisionRect.vertices[i];
+            //    var point2 = CollisionRect.vertices[(i + 1)%4];
+            //    Primitives2D.DrawLine(spriteBatch, point1, point2, Color.White);
+            //}
             
         }
 
