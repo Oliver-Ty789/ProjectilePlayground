@@ -53,7 +53,7 @@ namespace ProjectilePlayground
         float initial_angle;
         float radius;
         float time;
-        float dragCoefficient;
+        float linearDragCoefficient;
         float angularVelocity;
         float angularDragCoefficient;
         float restitution;
@@ -64,7 +64,7 @@ namespace ProjectilePlayground
         float baseSpeed;
         float baseAngle;
         float baseGravity;
-        float baseDragCoefficient;
+        float baselinearDragCoefficient;
         float baseAngularVelocity;
         float baseAngularDragCoefficient;
 
@@ -91,7 +91,7 @@ namespace ProjectilePlayground
             initial_angle = 40f;
             radius = 0.5f;
             time = 0f;
-            dragCoefficient = 0f;
+            linearDragCoefficient = 0f;
             angularVelocity = 0f;
             angularDragCoefficient = 0f;
             restitution = 0f;
@@ -101,7 +101,7 @@ namespace ProjectilePlayground
             baseSpeed = 15f;
             baseAngle = 45f;
             baseGravity = 9.81f;
-            baseDragCoefficient = 0f;
+            baselinearDragCoefficient = 0f;
             baseAngularVelocity = 0f;
             baseAngularDragCoefficient = 0f;
 
@@ -268,7 +268,7 @@ namespace ProjectilePlayground
             cannon.Click += ScrollerClick;
 
 
-            projectile = new Projectile(texture, startPos, scale, baseSpeed, mass, baseAngle, radius, dragCoefficient, angularVelocity, angularDragCoefficient, restitution);
+            projectile = new Projectile(texture, startPos, scale, baseSpeed, mass, baseAngle, radius, linearDragCoefficient, angularVelocity, angularDragCoefficient, restitution);
 
             pixelsPerM = projectile.ConversionToSI();
 
@@ -316,7 +316,7 @@ namespace ProjectilePlayground
             switch (button.index) // for handling different buttons
             { 
                 case 0: // shoot button
-                    projectile = new Projectile(texture, startPos, scale, initial_speed, mass, initial_angle, radius, dragCoefficient, angularVelocity, angularDragCoefficient, restitution);
+                    projectile = new Projectile(texture, startPos, scale, initial_speed, mass, initial_angle, radius, linearDragCoefficient, angularVelocity, angularDragCoefficient, restitution);
                     queuing = true;
 
                     foreach (var clock in _timers)
@@ -340,7 +340,8 @@ namespace ProjectilePlayground
                     initial_speed = baseSpeed * pixelsPerM;
                     environment.gravity = new Vector2(0, baseGravity * pixelsPerM);
                     angularVelocity = baseAngularVelocity;
-                    dragCoefficient = baseDragCoefficient;
+                    linearDragCoefficient = baselinearDragCoefficient;
+                    angularDragCoefficient = baseAngularDragCoefficient;
                     ResetAllSliders(); // sets position of sliders to correct place
                     break;
                 case 2:
@@ -371,7 +372,7 @@ namespace ProjectilePlayground
                     environment.gravity = new Vector2(0 ,e.property * pixelsPerM);
                     break;
                 case 3:
-                    dragCoefficient = e.property;
+                    linearDragCoefficient = e.property;
                     break;
                 case 4:
                     angularVelocity = e.property;
@@ -426,7 +427,7 @@ namespace ProjectilePlayground
                         slider.PropertyPlacement(baseGravity);
                         break;
                     case 3:
-                        slider.PropertyPlacement(baseDragCoefficient);
+                        slider.PropertyPlacement(baselinearDragCoefficient);
                         break;
                     case 4:
                         slider.PropertyPlacement(baseAngularVelocity);

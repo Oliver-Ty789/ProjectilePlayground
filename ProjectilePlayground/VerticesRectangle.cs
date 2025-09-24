@@ -65,14 +65,14 @@ namespace ProjectilePlayground
             {
 
                 // Get base Mesh vertex in Local space
-                Console.Write($"num {i} vert from {rectangle.vertices[i]} at pivot {pivot}");
+                //Console.Write($"num {i} vert from {rectangle.vertices[i]} at pivot {pivot}");
 
                 // make pivot the origin
                 Matrix translateToOrigin = Matrix.CreateTranslation(-pivot.X, -pivot.Y, 0);
                 Matrix translateToPivot = Matrix.CreateTranslation(pivot.X, pivot.Y, 0);
 
                 var vert = Vector2.Transform(rectangle.vertices[i], translateToOrigin);
-                Console.Write($"num {i} vert translated to local space: {vert}");
+               // Console.Write($"num {i} vert translated to local space: {vert}");
 
                 /* matrix model,
 
@@ -105,7 +105,7 @@ namespace ProjectilePlayground
                 // applying transformation to transformable vert placeholder
                 vert = Vector2.Transform(vert, transformationMatrix);
 
-                Console.WriteLine($"num {i} vert transformed in local space: {vert}");
+               // Console.WriteLine($"num {i} vert transformed in local space: {vert}");
 
                 // get vert base mesh back in global space
                 vert = Vector2.Transform(vert, translateToPivot);
