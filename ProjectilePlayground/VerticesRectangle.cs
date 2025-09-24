@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
+using System.Transactions;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using static System.Formats.Asn1.AsnWriter;
 
 
 namespace ProjectilePlayground
@@ -122,8 +126,45 @@ namespace ProjectilePlayground
             return transformedRectangle;
 
         }
+
+        public static Vector2 GetTransformedCircle(Vector2 center, Vector2 pivot, float angle, Vector2 translation, float scale)
+        { 
+            // move vertices around a pivot & translate them
+
+
+            
+            // make pivot the origin
+            Matrix translateToOrigin = Matrix.CreateTranslation(-pivot.X, -pivot.Y, 0);
+            Matrix translateToPivot = Matrix.CreateTranslation(pivot.X, pivot.Y, 0);
+
+            var translatedCenter = Vector2.Transform(center, translateToOrigin);
+           
+            // matrix declerations
+
+            Matrix scaleMatrix = Matrix.CreateScale(scale, scale, 1f);
+            Matrix rotationMatrix = Matrix.CreateRotationZ(angle);
+            Matrix translationMatrix = Matrix.CreateTranslation(translation.X, translation.Y, 0f);
+
+
+            // combining all transformations into one matrix
+            Matrix transformationMatrix = rotationMatrix * translationMatrix;
+            
+
+            // applying transformation to transformable vert placeholder
+            translatedCenter = Vector2.Transform(translatedCenter, transformationMatrix);
+        
+
+                   
+            // get translatedCenter base mesh back in global space
+            translatedCenter = Vector2.Transform(translatedCenter, translateToPivot);
+
+            // Write to output mesh
+            return translatedCenter;
+
+        }
     }
 }
+
 
 //public static VerticesRectangle GetCameraRectangle(VerticesRectangle rectangle, float angle, Vector2 position, VEctor2 pivot, Vector2 CameraPosition, Vector2 CameraScale)
 
