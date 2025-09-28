@@ -8,7 +8,7 @@ namespace ProjectilePlayground
     public enum ShapeType
     {
         Circle = 0,
-        rectangle = 1
+        Rectangle = 1
     }
     internal class RigidBody : ScaledSprite
     {
@@ -16,7 +16,11 @@ namespace ProjectilePlayground
         ///  keeping mostly everything public as attributes will be accessible in projectile class
         /// </summary>
         // public 
-        public Vector2 linearVelocity;
+        public Vector2 linearVelocity
+        {
+            get; set;
+        }
+
         public Vector2 previousLinearVelocity;
         public float angularVelocity;
         public readonly float linearDragCoefficient;
@@ -25,16 +29,17 @@ namespace ProjectilePlayground
         //public float rotationalVelocity;
         public VerticesRectangle _collisionRect;
 
-        public readonly float density;
+        //public readonly float density;
         public readonly float mass;
         public readonly float restitution;
         public readonly float area;
 
-        public readonly bool isStatic;
+        public bool isStatic;
+        public bool isCollisionResolved;
 
         public readonly float radius;
-        public readonly float width;
-        public readonly float height;
+        //public readonly float width;
+        //public readonly float height;
 
         public readonly ShapeType shapeType;
 
@@ -46,7 +51,7 @@ namespace ProjectilePlayground
         private Vector2 initialPos;
 
         // private instatiation as different shapes need different instantiations
-        private RigidBody(Texture2D texture, Vector2 position, float scale, Vector2 linearVelocity,  float mass, float restitution, float area, bool isStatic, float radius, float width, float height, ShapeType shapeType, float angularVelocity, float linearDragCoeffficient, float angularDragCoefficient) : base(texture, position, scale)
+        private RigidBody(Texture2D texture, Vector2 position, float scale, Vector2 linearVelocity,  float mass, float restitution, float area, bool isStatic, float radius, ShapeType shapeType, float angularVelocity, float linearDragCoeffficient, float angularDragCoefficient) : base(texture, position, scale)
         {
             this.linearVelocity = linearVelocity;
             this.angularVelocity = angularVelocity;
@@ -65,10 +70,18 @@ namespace ProjectilePlayground
             this.scale = scale;
             this.initialPos = position;
             this.radius = radius;
-            this.width = width;
-            this.height = height;
+            //this.width = width;
+            //this.height = height;
             this.shapeType = shapeType;
+            isCollisionResolved = false;
             _collisionRect = new VerticesRectangle(position, texture.Width, texture.Height, scale);
+
+            // adding an offset to compenstate the change in position for the source rect
+
+            var offset = new Vector2(-(texture.Width/2) * scale,-(texture.Height/2) * scale);
+
+            _collisionRect = VerticesRectangle.GetTransformedRectangle(_collisionRect, 0f, offset, new Vector2(0, 0), 1f);
+
             CollisionRect = _collisionRect;
         }
 
@@ -76,21 +89,22 @@ namespace ProjectilePlayground
         {
             float area = radius * radius * MathF.PI;
 
-            return new RigidBody(texture, position, scale, linearVelocity, mass, restitution, area, isStatic, radius, 0f, 0f, ShapeType.Circle, angularVelocity, linearDragCoeffficient, angularDragCoefficient);
+            return new RigidBody(texture, position, scale, linearVelocity, mass, restitution, area, isStatic, radius, ShapeType.Circle, angularVelocity, linearDragCoeffficient, angularDragCoefficient);
         }
 
-        public static RigidBody CreateRectangleBody(Texture2D texture, Vector2 position, float scale, Vector2 linearVelocity, float restitution, float width, float height, float mass, bool isStatic, float angularVelocity, float linearDragCoeffficient, float angularDragCoefficient)
+        public static RigidBody CreateRectangleBody(Texture2D texture, Vector2 position, float scale, Vector2 linearVelocity, float restitution, float mass, bool isStatic, float angularVelocity, float linearDragCoeffficient, float angularDragCoefficient)
         {
-            float area = width * height;
+            float area = (texture.Width * texture.Height)*scale;
 
-            return new RigidBody(texture, position, scale, linearVelocity, mass, restitution, area, isStatic, 0f, width, height, ShapeType.Circle, angularVelocity, linearDragCoeffficient, angularDragCoefficient);
+            return new RigidBody(texture, position, scale, linearVelocity, mass, restitution, area, isStatic, 0f, ShapeType.Rectangle, angularVelocity, linearDragCoeffficient, angularDragCoefficient);
         }
 
 
         private void ApplyVelocity(float delta)
         {
             position += linearVelocity * delta;
-
+            _collisionRect = VerticesRectangle.GetTransformedRectangle(CollisionRect, 0f, linearVelocity * delta, CollisionRect.Center + position, 1f);
+            CollisionRect = _collisionRect;
         }
 
         private void ApplyDrag(Environment environment)
@@ -101,7 +115,7 @@ namespace ProjectilePlayground
                 Convert.ToSingle(linearDragCoefficient * 0.5 * environment.airPressure * area * MathF.Pow(linearVelocity.Y, 2)));
 
             resistiveAngularForce = Convert.ToSingle(0.5 * angularDragCoefficient * MathF.Pow(angularVelocity, 2) * environment.airPressure * area);
-            Console.WriteLine(resistiveLinearForce);
+            
         }
         private void ApplyMagnus()
         {
@@ -117,6 +131,7 @@ namespace ProjectilePlayground
         private void ApplyForces(Environment environment, float delta)
         {
             // gravity
+
             resultantForce = environment.gravity * mass;
 
 
@@ -129,7 +144,7 @@ namespace ProjectilePlayground
 
 
 
-            if (position.Y < initialPos.Y + 1 && !(linearVelocity == new Vector2(0, 0)))
+            if (!(linearVelocity == new Vector2(0, 0)))
             {
                 previousLinearVelocity = linearVelocity;
                 // F = ma
@@ -151,14 +166,22 @@ namespace ProjectilePlayground
                 position.Y = initialPos.Y;
             }
         }
-
-
+        
+        //public static void HandleCollisions(RigidBody body1, RigidBody body2, out RigidBody bodya, out RigidBody bodyb) // called from main
+        //{
+        //   var bodya = 
+        //}
 
 
         public override void Draw(GameTime gameTime, SpriteBatch spriteBatch)
         {
             var pivot = new Vector2(SourceRect.Width / 2f, SourceRect.Height / 2f);
             spriteBatch.Draw(texture, DrawingRect, SourceRect, Color.White, rotation, pivot, SpriteEffects.None, 0f);
+
+            for (int i = 0; i < 4; i++)
+            {
+                Primitives2D.DrawLine(spriteBatch, CollisionRect.vertices[i], CollisionRect.vertices[(i+1)%4], Color.White);
+            }
             base.Draw(gameTime, spriteBatch);
         }
 
@@ -166,11 +189,25 @@ namespace ProjectilePlayground
         {
             float delta = (float)gameTime.ElapsedGameTime.TotalSeconds; // difference in time between frames, keeps velocity/acceleration consitent
 
-            ApplyDrag(environment);
-            ApplyMagnus();
-            ApplyForces(environment, delta);
-            ApplyVelocity(delta);
-            
+            if (!isStatic) // only apply physics to non-static bodies and not while impulse is being applied
+            {
+                if (!isCollisionResolved)
+                {
+                    ApplyDrag(environment);
+                    ApplyMagnus();
+                    ApplyForces(environment, delta);
+                }
+
+                ApplyVelocity(delta);
+            }
+
+            if (shapeType == ShapeType.Rectangle)
+            {
+                for (int i = 0;i < 4;i++)
+                {
+                   // Console.WriteLine($"{i} : {CollisionRect.vertices[i]}");
+                }
+            }
 
             base.Update(gameTime, environment);
         }

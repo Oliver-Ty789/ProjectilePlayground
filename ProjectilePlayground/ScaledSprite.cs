@@ -33,7 +33,7 @@ namespace ProjectilePlayground
                 return new Microsoft.Xna.Framework.Rectangle(
                     0,
                     0,
-                    (int)(texture.Width ),
+                    (int)(texture.Width),
                     (int)(texture.Height));
             }
         }

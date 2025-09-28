@@ -149,7 +149,7 @@ namespace ProjectilePlayground
             //ApplyForces(environment, delta);
             ////ApplyVelocity(delta);
             previousVelocity = body.linearVelocity;
-            body.Update(gameTime, environment);
+            //body.Update(gameTime, environment);
             position = body.position;
             // for trail nodes
             foreach (var node in _nodes)

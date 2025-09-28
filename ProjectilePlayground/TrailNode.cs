@@ -82,7 +82,7 @@ namespace ProjectilePlayground
             currentMouse = Mouse.GetState();
             var mouseRect = new VerticesRectangle(new Vector2(currentMouse.X, currentMouse.Y), 1, 1, 1);
 
-            if (Collisions.IntersectingPolygons(mouseRect.vertices, CollisionRect.vertices))
+            if (Collisions.IntersectingPolygons(mouseRect.vertices, CollisionRect.vertices, out Vector2 normal))
             {
                 isHovering = true;
             }

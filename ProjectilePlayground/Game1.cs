@@ -19,6 +19,7 @@ namespace ProjectilePlayground
         private Button [] _buttons;
         private List<Projectile> _projectiles;
         private List<Timer> _timers;
+        private List<RigidBody> _bodies;
         
         
         // for waiting projectiles
@@ -68,6 +69,8 @@ namespace ProjectilePlayground
         float baseAngularVelocity;
         float baseAngularDragCoefficient;
 
+       
+
         public Game1()
         {
             _graphics = new GraphicsDeviceManager(this);
@@ -82,9 +85,10 @@ namespace ProjectilePlayground
         {
             // TODO: Add your initialization logic here
 
+
             // parameters for first projectile (test)
             texture = Content.Load<Texture2D>("sprites/Final_face_circle");
-            startPos = new Vector2(35, 630);
+            startPos = new Vector2(40, 600);
             scale = 0.25f;
             initial_speed = 15f;
             mass = 1;
@@ -94,7 +98,7 @@ namespace ProjectilePlayground
             linearDragCoefficient = 0f;
             angularVelocity = 0f;
             angularDragCoefficient = 0f;
-            restitution = 0f;
+            restitution = 0.3f;
 
 
             // slider base properties
@@ -123,7 +127,7 @@ namespace ProjectilePlayground
 
             // TODO: use this.Content to load your game content here
 
-            var shootButton = new Button(Content.Load<Texture2D>("sprites/Button"), new Vector2(950, 600), 2f, Content.Load<SpriteFont>("fonts/font"), 0)
+            var shootButton = new Button(Content.Load<Texture2D>("sprites/Button"), new Vector2(980, 660), 1.25f, Content.Load<SpriteFont>("fonts/font"), 0)
             {
                 text = "SHOOT",
             };
@@ -151,7 +155,7 @@ namespace ProjectilePlayground
 
 
             var speedSlider = new Slider(Content.Load<Texture2D>("sprites/scroller"), 
-                new Vector2(300, 650), 
+                new Vector2(300, 670), 
                 1f, 
                 Content.Load<SpriteFont>("fonts/font"), 
                 Content.Load<Texture2D>("sprites/sliderbar"),
@@ -252,7 +256,7 @@ namespace ProjectilePlayground
 
             var cannon = new Cannon(
                 Content.Load<Texture2D>("sprites/cannonHead"),
-                new Vector2(50, 630),
+                new Vector2(50, 610),
                 1f,
                 Content.Load<Texture2D>("sprites/cannonWheel"),
                 Content.Load<SpriteFont>("fonts/font"),
@@ -266,6 +270,18 @@ namespace ProjectilePlayground
             };
 
             cannon.Click += ScrollerClick;
+
+            var floorBody = RigidBody.CreateRectangleBody(
+                Content.Load<Texture2D>("sprites/floor"), 
+                new Vector2(640,750), 
+                1f, 
+                new Vector2(0, 0), 
+                1f, 
+                int.MaxValue, // for handling collisions
+                true, 
+                0f, 
+                0f, 
+                0f);
 
 
             projectile = new Projectile(texture, startPos, scale, baseSpeed, mass, baseAngle, radius, linearDragCoefficient, angularVelocity, angularDragCoefficient, restitution);
@@ -300,6 +316,11 @@ namespace ProjectilePlayground
                 
             };
 
+            _bodies = new List<RigidBody>
+            {
+                floorBody
+            };
+
             _projectileQueue = new Queue<Projectile> { };
             _nodeQueue = new Queue<TrailNode> { };
             queuing = false;
@@ -316,7 +337,9 @@ namespace ProjectilePlayground
             switch (button.index) // for handling different buttons
             { 
                 case 0: // shoot button
+                    _bodies.Remove(projectile.body);
                     projectile = new Projectile(texture, startPos, scale, initial_speed, mass, initial_angle, radius, linearDragCoefficient, angularVelocity, angularDragCoefficient, restitution);
+                    //Console.WriteLine(_bodies.Remove(projectile.body));
                     queuing = true;
 
                     foreach (var clock in _timers)
@@ -473,6 +496,34 @@ namespace ProjectilePlayground
                         slider.Update(gameTime, environment);
                     }
 
+                
+                foreach (var body in _bodies)
+                {
+                    body.Update(gameTime, environment);
+                }
+
+                if (_bodies.Count > 1) // only try to detect collisions if more than one rigid body present
+                {
+                    for (int i = 0; i < _bodies.Count; i++) // handling collisions *temp*
+                    {
+                        var bodyTarget = _bodies[(i + 1) % _bodies.Count];
+                        var body = _bodies[i];
+                        if (Collisions.IntersectingPolygons(body.CollisionRect.vertices, bodyTarget.CollisionRect.vertices, out Vector2 normal))
+                        {
+
+                            Collisions.ResolveCollisions(_bodies[i], _bodies[(i + 1) % _bodies.Count], normal);
+                            _bodies[i].isCollisionResolved = true;
+                            _bodies[(i + 1) % _bodies.Count].isCollisionResolved = true;
+                            
+                        }
+                        else
+                        {
+                            _bodies[i].isCollisionResolved = false;
+                            _bodies[(i + 1) % _bodies.Count].isCollisionResolved = false;
+                        }
+                    }
+                }
+
                 foreach (var projectile in _projectiles)
                 {
                     projectile.Update(gameTime, environment);
@@ -494,13 +545,14 @@ namespace ProjectilePlayground
                     _nodeQueue.Enqueue(node);
                     tickqueuing = true;
                 }
-
+                
                 if (queuing) // add projectile to projectile list
                 {
-                    foreach (var projectile in _projectileQueue)
+                    foreach (var newprojectile in _projectileQueue)
                     {
                         _projectiles.Clear();
-                        _projectiles.Add(projectile);
+                        _projectiles.Add(newprojectile);
+                        _bodies.Add(newprojectile.body);
                     }
                     queuing = false;
                     _projectileQueue.Clear();
@@ -530,6 +582,11 @@ namespace ProjectilePlayground
             foreach (var projectile in _projectiles)
             {
                 projectile.Draw(gameTime, _spriteBatch);
+            }
+            foreach (var body in _bodies)
+            {
+                if (!(body.shapeType == ShapeType.Circle)) // dont draw projectiles
+                    body.Draw(gameTime, _spriteBatch);
             }
             foreach (var button in _buttons)
             {

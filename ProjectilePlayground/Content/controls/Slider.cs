@@ -308,7 +308,7 @@ namespace ProjectilePlayground.Content.controls
 
             // checking if mouse is hovering and or clicking the button
 
-            if (Collisions.IntersectingPolygons(mouseRect.vertices, CollisionRect.vertices) || isDragging)
+            if (Collisions.IntersectingPolygons(mouseRect.vertices, CollisionRect.vertices, out Vector2 normal) || isDragging)
             {
                 isHovering = true;
 
@@ -342,7 +342,7 @@ namespace ProjectilePlayground.Content.controls
             }
 
             // for text inputs
-            if (Collisions.IntersectingPolygons(mouseRect.vertices, PropertyRect.vertices) && (currentMouse.LeftButton == ButtonState.Released) && (previousMouse.LeftButton == ButtonState.Pressed) && !isHovering)
+            if (Collisions.IntersectingPolygons(mouseRect.vertices, PropertyRect.vertices, out Vector2 normal2) && (currentMouse.LeftButton == ButtonState.Released) && (previousMouse.LeftButton == ButtonState.Pressed) && !isHovering)
             {
                 isTexting = true;
                 var x = (CollisionRect.X + (CollisionRect.Width / 2)) - (font.MeasureString(text_scroller).X / 2);
