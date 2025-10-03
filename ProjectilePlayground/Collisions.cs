@@ -108,7 +108,7 @@ namespace ProjectilePlayground
             // static friction
             Vector2 unitNormal = VectorMaths.UnitVector(normal); // find direction of normal
 
-            Vector2 frictionNormalA = unitNormal * (environment.gravity * bodyA.mass * MathF.Cos(bodyA.rotation)); // find mag and direction of friction normal
+            Vector2 frictionNormalA = unitNormal * (environment.gravity * bodyA.mass * MathF.Cos(bodyB.rotation)); // find mag and direction of friction normal
             Vector2 frictionParallelA = new Vector2(-frictionNormalA.Y, frictionNormalA.X); // make direction parallel to contact surfaces
             bodyA.staticFriction = frictionParallelA * bodyA.staticFrictionCoefficient / MathF.Abs(j);
  

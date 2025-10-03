@@ -37,7 +37,7 @@ namespace ProjectilePlayground
         private VerticesRectangle _collisionRect;
         
 
-        public Projectile(Texture2D texture, Vector2 position, float scale, float initial_s, int mass, float initial_a, float radius, float linearDragCoefficient, float angularVelocity, float angularDragCoefficient, float restitution) : base (texture, position, scale)
+        public Projectile(Texture2D texture, Vector2 position, float scale, float initial_s, int mass, float initial_a, float radius, float linearDragCoefficient, float angularVelocity, float angularDragCoefficient, float restitution, bool isFrictionless) : base (texture, position, scale)
         {
             //this.mass = mass;
             
@@ -53,7 +53,7 @@ namespace ProjectilePlayground
             CollisionRect = _collisionRect;
             initialVelocity = VectorMaths.ToVector2(initial_s, initial_a);
 
-            body = RigidBody.CreateCircleBody(texture, position, scale, initialVelocity, restitution, radius, mass, false, angularVelocity, linearDragCoefficient, angularDragCoefficient);
+            body = RigidBody.CreateCircleBody(texture, position, scale, initialVelocity, restitution, radius, mass, false, angularVelocity, linearDragCoefficient, angularDragCoefficient, isFrictionless);
 
             _nodes = new List<TrailNode> { };
             

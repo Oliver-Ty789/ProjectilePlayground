@@ -59,6 +59,7 @@ namespace ProjectilePlayground
         float angularDragCoefficient;
         float restitution;
         DateTime timerStartTime;
+        bool isFrictionless;
 
         // base values
 
@@ -99,6 +100,7 @@ namespace ProjectilePlayground
             angularVelocity = 0f;
             angularDragCoefficient = 0f;
             restitution = 0.5f;
+            isFrictionless = true;
 
 
             // slider base properties
@@ -147,6 +149,13 @@ namespace ProjectilePlayground
             };
 
             tickProjectilesButton.Click += Button_Click;
+
+            var tickFrictionButton = new TickBox(Content.Load<Texture2D>("sprites/tickBox"), new Vector2(1000, 50), 0.1f, Content.Load<SpriteFont>("fonts/font"), 3, Content.Load<Texture2D>("sprites/tick"))
+            {
+                text = "FRICTION"
+            };
+
+            tickFrictionButton.Click += Button_Click;
 
             menuButton = new Button(Content.Load<Texture2D>("sprites/Button"), new Vector2(50, 100), 8f, Content.Load<SpriteFont>("fonts/font"), 1)
             {
@@ -281,10 +290,24 @@ namespace ProjectilePlayground
                 true, 
                 0f, 
                 0f, 
-                0f);
+                0f,
+                isFrictionless);
+
+            var testBody = RigidBody.CreateRectangleBody(
+                Content.Load<Texture2D>("sprites/button"),
+                new Vector2(300, 100),
+                1f,
+                new Vector2(0, 0),
+                0.5f,
+                3f, // for handling collisions
+                false,
+                0f,
+                0f,
+                0f,
+                isFrictionless);
 
 
-            projectile = new Projectile(texture, startPos, scale, baseSpeed, mass, baseAngle, radius, linearDragCoefficient, angularVelocity, angularDragCoefficient, restitution);
+            projectile = new Projectile(texture, startPos, scale, baseSpeed, mass, baseAngle, radius, linearDragCoefficient, angularVelocity, angularDragCoefficient, restitution, isFrictionless);
 
             pixelsPerM = projectile.ConversionToSI();
 
@@ -297,6 +320,7 @@ namespace ProjectilePlayground
                 shootButton,
                 resetButton,
                 tickProjectilesButton,
+                tickFrictionButton,
             };
 
             _sliders = new Slider[]
@@ -318,7 +342,8 @@ namespace ProjectilePlayground
 
             _bodies = new List<RigidBody>
             {
-                floorBody
+                floorBody,
+                testBody
             };
 
             _projectileQueue = new Queue<Projectile> { };
@@ -338,7 +363,7 @@ namespace ProjectilePlayground
             { 
                 case 0: // shoot button
                     _bodies.Remove(projectile.body);
-                    projectile = new Projectile(texture, startPos, scale, initial_speed, mass, initial_angle, radius, linearDragCoefficient, angularVelocity, angularDragCoefficient, restitution);
+                    projectile = new Projectile(texture, startPos, scale, initial_speed, mass, initial_angle, radius, linearDragCoefficient, angularVelocity, angularDragCoefficient, restitution, isFrictionless);
                     //Console.WriteLine(_bodies.Remove(projectile.body));
                     queuing = true;
 
@@ -373,6 +398,25 @@ namespace ProjectilePlayground
                     else
                         isVisibleSliders = true;
                     break;
+
+                case 3:
+                    for (int i = 0;  i < _bodies.Count; i++)
+                    {
+                        if (_bodies[i].isFrictionless)
+                        {
+                            _bodies[i].isFrictionless = false;
+                            isFrictionless = false;
+                        }
+                        else
+                        {
+                            _bodies[i].isFrictionless = true;
+                            isFrictionless = true;
+                        }
+
+                        
+                    }
+                    break;
+
                 default:
                     break;
 
@@ -506,20 +550,23 @@ namespace ProjectilePlayground
                 {
                     for (int i = 0; i < _bodies.Count; i++) // handling collisions *temp*
                     {
-                        var bodyTarget = _bodies[(i + 1) % _bodies.Count];
-                        var body = _bodies[i];
-                        if (Collisions.IntersectingPolygons(body.CollisionRect.vertices, bodyTarget.CollisionRect.vertices, out Vector2 normal))
-                        {
+                        int count = 0;
 
-                            Collisions.ResolveCollisions(_bodies[i], _bodies[(i + 1) % _bodies.Count], normal, environment);
-                            _bodies[i].isCollisionResolved = true;
-                            _bodies[(i + 1) % _bodies.Count].isCollisionResolved = true;
-                            
+                        for (int j = 1; j < _bodies.Count; j++)
+                        {
+                            if (Collisions.IntersectingPolygons(_bodies[i].CollisionRect.vertices, _bodies[(i+j) % (_bodies.Count)].CollisionRect.vertices, out Vector2 normal))
+                            {
+
+                                Collisions.ResolveCollisions(_bodies[i], _bodies[(i + j) % (_bodies.Count)], normal, environment);
+                                _bodies[i].isCollisionResolved = true;
+                                _bodies[(i + j) % (_bodies.Count)].isCollisionResolved = true;
+                            }
+                            else count++;
                         }
-                        else
+                        //Console.WriteLine(count);
+                        if (count == _bodies.Count - 1)
                         {
                             _bodies[i].isCollisionResolved = false;
-                            _bodies[(i + 1) % _bodies.Count].isCollisionResolved = false;
                         }
                     }
                 }
