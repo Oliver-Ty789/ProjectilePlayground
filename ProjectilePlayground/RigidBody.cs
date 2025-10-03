@@ -25,6 +25,10 @@ namespace ProjectilePlayground
         public float angularVelocity;
         public readonly float linearDragCoefficient;
         public readonly float angularDragCoefficient;
+        public readonly float staticFrictionCoefficient;
+        public readonly float dynamicFrictionCoefficient;
+        public Vector2 staticFriction;
+        public Vector2 dynamicFriction;
         public float rotation;
         //public float rotationalVelocity;
         public VerticesRectangle _collisionRect;
@@ -58,6 +62,8 @@ namespace ProjectilePlayground
             this.rotation = 0f;
             this.linearDragCoefficient = linearDragCoeffficient;
             this.angularDragCoefficient = angularDragCoefficient;
+            staticFrictionCoefficient = 0.6f;
+            dynamicFrictionCoefficient = 0.3f;
             //this.rotationalVelocity = 0f;
 
             //this.density = density;
@@ -125,6 +131,37 @@ namespace ProjectilePlayground
                 var perpendicularVector = new Vector2(-unitVelocity.Y, unitVelocity.X);
                 var magnusForceMag = linearDragCoefficient * angularVelocity * VectorMaths.Length(linearVelocity);
                 magnusForce = perpendicularVector * magnusForceMag;
+            }
+        }
+
+        private void ApplyFriction(Environment environment, float delta)
+        {
+            // calc resultant velocity (calc is short for calculator for anyone who just joined the stream) 
+            // gravity
+            resultantForce = environment.gravity * mass;
+
+            // drag
+            resultantForce += resistiveLinearForce;
+
+
+            // magnus
+            resultantForce += magnusForce;
+
+            var resultantMag = MathF.Abs(VectorMaths.Length(resultantForce));
+            var staticMag = MathF.Abs(VectorMaths.Length(staticFriction));
+
+            Console.WriteLine($"staticMag: {staticMag}");
+            Console.WriteLine($"resultantMag: {resultantMag}");
+          
+            if (staticMag < resultantMag) // apply dynamic friction
+            {
+                linearVelocity += dynamicFriction;
+                Console.WriteLine("yo");
+            }
+            // appling static friction is merely not moving the object as there is no further external forces
+            else
+            {
+                linearVelocity = Vector2.Zero;
             }
         }
 
@@ -197,7 +234,12 @@ namespace ProjectilePlayground
                     ApplyMagnus();
                     ApplyForces(environment, delta);
                 }
-
+                else
+                {
+                    ApplyDrag(environment);
+                    ApplyMagnus();
+                    ApplyFriction(environment, delta);
+                }
                 ApplyVelocity(delta);
             }
 

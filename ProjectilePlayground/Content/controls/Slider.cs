@@ -357,14 +357,22 @@ namespace ProjectilePlayground.Content.controls
                 {
                     isTexting = false;
                     // need to check if value is appropriate
-                    float value = Convert.ToSingle(text_scroller);
-                   
-                    if (value <= maxValue && value >= minValue)
-                    {
 
-                        PropertyPlacement(value);
-                        property = value;
-                        Click?.Invoke(this, new SliderClickEventArgs(property, index));
+                    try
+                    {
+                        float value = Convert.ToSingle(text_scroller);
+
+                        if (value <= maxValue && value >= minValue)
+                        {
+
+                            PropertyPlacement(value);
+                            property = value;
+                            Click?.Invoke(this, new SliderClickEventArgs(property, index));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.ToString());
                     }
                 }
             }

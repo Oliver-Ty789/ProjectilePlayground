@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading.Tasks;
 using System.ComponentModel.Design;
 
@@ -87,29 +83,46 @@ namespace ProjectilePlayground
                     max = projection;
                 }
             }
-
-
         }
 
-        public static void ResolveCollisions(RigidBody bodyA, RigidBody bodyB, Vector2 normal)
+        public static void ResolveCollisions(RigidBody bodyA, RigidBody bodyB, Vector2 normal, Environment environment)
         {
             
             var relativeVelocity = bodyA.linearVelocity - bodyB.linearVelocity;
             //Console.WriteLine(relativeVelocity);
+            var j = 0f; // scalar quantity for impulse
+
+            var e = MathF.Min(bodyA.restitution, bodyB.restitution);
+
+            j = -(1 + e) * VectorMaths.DotProduct(normal, relativeVelocity) / VectorMaths.DotProduct(normal, normal * ((1 / bodyA.mass) + (1 / bodyB.mass)));
+
             if (!bodyA.isCollisionResolved || !bodyB.isCollisionResolved) // if velocity is too low then too stop fazing through just keep bodies still
             {
-
-                var j = 0f; // scalar quantity for impulse
-
-                var e = MathF.Min(bodyA.restitution, bodyB.restitution);
-
-                j = -(1 + e) * VectorMaths.DotProduct(normal, relativeVelocity) / VectorMaths.DotProduct(normal, normal * ((1 / bodyA.mass) + (1 / bodyB.mass)));
-
                 bodyA.linearVelocity = bodyA.linearVelocity + (j / bodyA.mass) * normal;
                 bodyB.linearVelocity = bodyB.linearVelocity - (j / bodyB.mass) * normal;
                 return;
             }
-            
+
+            // always just apply friction to body
+
+            // static friction
+            Vector2 unitNormal = VectorMaths.UnitVector(normal); // find direction of normal
+
+            Vector2 frictionNormalA = unitNormal * (environment.gravity * bodyA.mass * MathF.Cos(bodyA.rotation)); // find mag and direction of friction normal
+            Vector2 frictionParallelA = new Vector2(-frictionNormalA.Y, frictionNormalA.X); // make direction parallel to contact surfaces
+            bodyA.staticFriction = frictionParallelA * bodyA.staticFrictionCoefficient / MathF.Abs(j);
+ 
+            Vector2 frictionNormalB = unitNormal * (environment.gravity * bodyB.mass * MathF.Cos(bodyB.rotation)); // find mag and direction of friction normal
+            Vector2 frictionParallelB = new Vector2(-frictionNormalB.Y, frictionNormalB.X);
+            bodyB.staticFriction = (frictionParallelB * bodyB.staticFrictionCoefficient) / MathF.Abs(j);
+
+           // dynamic friction
+            // need to be opposite to linear velocity
+            Vector2 unitOppositeLinearVelocityA = new Vector2(-1,-1) * VectorMaths.UnitVector(bodyA.linearVelocity);
+            Vector2 unitOppositeLinearVelcoityB = new Vector2(-1,-1) * VectorMaths.UnitVector(bodyB.linearVelocity);
+
+            bodyA.dynamicFriction = frictionParallelA * bodyA.dynamicFrictionCoefficient * unitOppositeLinearVelocityA;
+            bodyB.dynamicFriction = frictionParallelB * bodyB.dynamicFrictionCoefficient * unitOppositeLinearVelcoityB;
         }
 
 

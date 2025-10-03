@@ -98,7 +98,7 @@ namespace ProjectilePlayground
             linearDragCoefficient = 0f;
             angularVelocity = 0f;
             angularDragCoefficient = 0f;
-            restitution = 0.3f;
+            restitution = 0.5f;
 
 
             // slider base properties
@@ -511,7 +511,7 @@ namespace ProjectilePlayground
                         if (Collisions.IntersectingPolygons(body.CollisionRect.vertices, bodyTarget.CollisionRect.vertices, out Vector2 normal))
                         {
 
-                            Collisions.ResolveCollisions(_bodies[i], _bodies[(i + 1) % _bodies.Count], normal);
+                            Collisions.ResolveCollisions(_bodies[i], _bodies[(i + 1) % _bodies.Count], normal, environment);
                             _bodies[i].isCollisionResolved = true;
                             _bodies[(i + 1) % _bodies.Count].isCollisionResolved = true;
                             
@@ -530,7 +530,7 @@ namespace ProjectilePlayground
                 }
 
 
-                if (projectile.previousVelocity.Y < 0 && projectile.body.linearVelocity.Y > 0) // adding trail node at highest point
+                if (projectile.body.previousLinearVelocity.Y < 0 && projectile.body.linearVelocity.Y > 0) // adding trail node at highest point
                 {
                     TrailNode node = new TrailNode(
                         Content.Load<SpriteFont>("fonts/font"),
