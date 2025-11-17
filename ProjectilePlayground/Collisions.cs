@@ -102,7 +102,7 @@ namespace ProjectilePlayground
 
                    
                     PointSegmentDistance(p, va, vb, out float distSq, out Vector2 closestP);
-                    Console.WriteLine($"mindistSq: {minDistSq}");
+                    
 
                     if (VectorMaths.NearlyEqual(distSq, minDistSq))
                     {
@@ -172,7 +172,7 @@ namespace ProjectilePlayground
 
 
 
-            //Console.WriteLine(VectorMaths.DotProduct(lambda * edge, -edge));
+            
             // compare direction of lamba to direction of va to vb, if opposite, we know its not a contact point so return distsq to be max
 
             /// this is done to see if the point is parallel with an infinite edge but beyond the bounds of the actual edge
@@ -190,10 +190,6 @@ namespace ProjectilePlayground
             {
                 closestP = va + lambda * edge;
                 distSq = VectorMaths.Length(closestP - p) * VectorMaths.Length(closestP - p);
-                Console.WriteLine($"closest point on edge: {closestP}");
-
-
-                Console.WriteLine($"distsq: {distSq}");
             }
             
             
@@ -202,11 +198,7 @@ namespace ProjectilePlayground
 
         }
 
-        //public static void StepBodies(RigidBody bodyA, RigidBody bodyB, Vector2 normal, float depth)
-        //{
-        //    bodyA.position += VectorMaths.UnitVector(normal) * depth;
-        //    //bodyB.position -= VectorMaths.UnitVector(normal) * depth;
-        //}
+        
 
         
         public static void ResolveCollisionsWithRotation(RigidBody bodyA, RigidBody bodyB, Vector2 normal, Environment environment, Vector2 contact1, Vector2 contact2, int contactCount)
@@ -240,23 +232,23 @@ namespace ProjectilePlayground
                     Vector2 angularLinearVelocityA = rAPerp * bodyA.angularVelocity;
                     Vector2 angularLinearVelocityB = rBPerp * bodyB.angularVelocity;
 
-                    Vector2 unitNormal = VectorMaths.UnitVector(normal);
+                    //Vector2 unitNormal = VectorMaths.UnitVector(normal);
 
                     relativeVelocity = (bodyB.linearVelocity + angularLinearVelocityB) - (angularLinearVelocityA + bodyA.linearVelocity);
 
-                    float contactVelocityMag = VectorMaths.DotProduct(relativeVelocity, unitNormal);
+                    float contactVelocityMag = VectorMaths.DotProduct(relativeVelocity, normal);
 
-                    //if (contactVelocityMag > 0f) // collisions already being resolved
-                    //{
-                    //    return;
-                    //}
+                    if (contactVelocityMag > 0f) // collisions already being resolved
+                    {
+                        return;
+                    }
 
-                    float rAPerpDotN = VectorMaths.DotProduct(rAPerp, unitNormal);
-                    float rBPerpDotN = VectorMaths.DotProduct(rBPerp, unitNormal);
+                    float rAPerpDotN = VectorMaths.DotProduct(rAPerp, normal);
+                    float rBPerpDotN = VectorMaths.DotProduct(rBPerp, normal);
 
-                    float demon = (1 / bodyA.mass) + (1 / bodyB.mass) +
-                        (rAPerpDotN * rAPerpDotN) * (1 / bodyA.rotationalInertia) +
-                        (rBPerpDotN * rBPerpDotN) * (1 / bodyB.rotationalInertia);
+                    float demon = bodyA.invMass + bodyB.invMass +
+                        rAPerpDotN * rAPerpDotN * bodyA.invInertia +
+                        rBPerpDotN * rBPerpDotN * bodyB.invInertia;
 
 
 
@@ -267,19 +259,27 @@ namespace ProjectilePlayground
                     Vector2 impulse = j * normal;
                     impulseList[i] = impulse;
                 }
-                if (!bodyA._collidingWith.Contains(bodyB) && !bodyB._collidingWith.Contains(bodyA)) // check to see if both bodies have already collided 
-                    for (int i = 0; i < contactCount; i++)
+                
+                for (int i = 0; i < contactCount; i++)
+                {
+                    Vector2 impulse = impulseList[i];
+
+                    bodyA.linearVelocity += -impulse * bodyA.invMass;
+                    bodyB.linearVelocity += impulse * bodyB.invMass;
+
+                    if (bodyB.shapeType != ShapeType.Circle)
                     {
-                        Vector2 impulse = impulseList[i];
-
-                        bodyA.linearVelocity += -impulse / bodyA.mass;
-                        bodyA.angularVelocity += -VectorMaths.CrossProductArea(impulse, rAList[i]) / bodyA.rotationalInertia;
-                        bodyB.linearVelocity += impulse / bodyB.mass;
-                        bodyB.angularVelocity += VectorMaths.CrossProductArea(impulse, rBList[i]) / bodyB.rotationalInertia;
-
-                        // Console.WriteLine(impulse);
-
+                        bodyB.angularVelocity += VectorMaths.CrossProductArea(impulse, rBList[i]) * bodyB.invInertia;
                     }
+                    if (bodyA.shapeType != ShapeType.Circle)
+                    {
+                        bodyA.angularVelocity += -VectorMaths.CrossProductArea(impulse, rAList[i]) * bodyA.invInertia;
+                    }
+
+                    Console.WriteLine(VectorMaths.CrossProductArea(impulse, rBList[i]) * bodyB.invInertia);
+                    Console.WriteLine(bodyB.angularVelocity);
+
+                }
                 bodyA.isCollisionResolved = true;
                 bodyB.isCollisionResolved = true;
 

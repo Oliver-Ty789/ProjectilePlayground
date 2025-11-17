@@ -44,6 +44,8 @@ namespace ProjectilePlayground
         public readonly float restitution;
         public readonly float area;
         public readonly float rotationalInertia;
+        public readonly float invInertia;
+        public readonly float invMass;
 
         public bool isStatic;
         public bool isCollisionResolved;
@@ -102,6 +104,19 @@ namespace ProjectilePlayground
             CollisionRect = _collisionRect;
 
             this.rotationalInertia = GetRotationalIntertia(pixelsPerM);
+
+            if (!isStatic)
+            {
+                this.invInertia = 1f / rotationalInertia;
+                this.invMass = 1f / mass;
+            }
+            else
+            {
+                this.invInertia = 0f;
+                this.invMass = 0f;
+            }
+
+
             
         }
 
@@ -114,7 +129,7 @@ namespace ProjectilePlayground
 
         public static RigidBody CreateRectangleBody(Texture2D texture, Vector2 position, float scale, Vector2 linearVelocity, float restitution, float mass, bool isStatic, float angularVelocity, float linearDragCoeffficient, float angularDragCoefficient, bool isFrictionless, float pixelsPerM)
         {
-            float area = (texture.Width * texture.Height)*scale*pixelsPerM;
+            float area = (texture.Width * texture.Height)*scale;
 
             return new RigidBody(texture, position, scale, linearVelocity, mass, restitution, area, isStatic, 0f, ShapeType.Rectangle, angularVelocity, linearDragCoeffficient, angularDragCoefficient, isFrictionless, pixelsPerM);
         }
@@ -123,12 +138,13 @@ namespace ProjectilePlayground
         {
             if (shapeType == ShapeType.Circle)
             {
-                return 0.5f * mass * radius * radius;
+                float radiusPix = CollisionRect.Width;
+                return 0.5f * mass * radiusPix * radiusPix;
             }
             else
             {
-                float widthM = CollisionRect.Width / pixelsPerM;
-                float heightM = CollisionRect.Height / pixelsPerM;
+                float widthM = CollisionRect.Width;
+                float heightM = CollisionRect.Height;
                 return (1f/12f) * mass * (widthM * widthM  + heightM * heightM);
             }
         }

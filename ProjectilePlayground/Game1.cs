@@ -416,6 +416,54 @@ namespace ProjectilePlayground
                     linearDragCoefficient = baselinearDragCoefficient;
                     angularDragCoefficient = baseAngularDragCoefficient;
                     ResetAllSliders(); // sets position of sliders to correct place
+                    // reset all rigid bodies
+                    _bodies.Clear();
+                    var floorBody = RigidBody.CreateRectangleBody(
+                    Content.Load<Texture2D>("sprites/floor"),
+                    new Vector2(640, 750),
+                    1f,
+                    new Vector2(0, 0),
+                    1f,
+                    int.MaxValue, // for handling collisions
+                    true,
+                    0f,
+                    0f,
+                    0f,
+                    isFrictionless,
+                    pixelsPerM);
+
+                    var testBody = RigidBody.CreateRectangleBody(
+                        Content.Load<Texture2D>("sprites/target"),
+                        new Vector2(600, 500),
+                        1.5f,
+                        new Vector2(0, 0),
+                        0.5f,
+                        10f, // for handling collisions
+                        false,
+                        0f,
+                        0f,
+                        0f,
+                        isFrictionless,
+                        pixelsPerM);
+
+                    var testBody2 = RigidBody.CreateRectangleBody(
+                        Content.Load<Texture2D>("sprites/target"), // texture
+                        new Vector2(800, 500), // pos
+                        1f, // scale
+                        new Vector2(0, 0), // linear velocity
+                        0.5f, // restitution
+                        5f, // mass for handling collisions
+                        false, // static?
+                        0f, // angular velocity
+                        0f, // linear drag co
+                        0f, // angular drag co
+                        isFrictionless,
+                        pixelsPerM);
+
+                    _bodies.Add( floorBody );
+                    _bodies.Add(testBody );
+                    _bodies.Add(testBody2);
+
                     break;
                 case 2:
                     if (isVisibleSliders)
