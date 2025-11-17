@@ -135,11 +135,7 @@ namespace ProjectilePlayground
             {
                 CannonOrientation();
             }
-            //foreach (var vert in CollisionRect.vertices)
-            //{
-            //    Console.WriteLine(vert.ToString());
-            //}
-
+            
             base.Update(gameTime, environment);
         }
     }

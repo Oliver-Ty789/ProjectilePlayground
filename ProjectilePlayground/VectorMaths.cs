@@ -5,6 +5,7 @@ using System.Linq;
 using Microsoft.Xna.Framework;
 using System.Text;
 using System.Threading.Tasks;
+using System.Reflection.Metadata.Ecma335;
 
 namespace ProjectilePlayground
 {
@@ -38,11 +39,22 @@ namespace ProjectilePlayground
 
             return a.X * b.X + a.Y * b.Y;
         }
-        
-        //public static Vector2 CrossProduct(Vector2 a, Vector2 b)
-        //{
-        //    // a x b = Area * 
-        //}
+
+        public static float CrossProductArea(Vector2 a, Vector2 b)
+        {
+            return 0.5f * Length(a * b);
+        }
+
+        public static bool NearlyEqual(float a, float b) // due to floating point accuracies, this is better than using != for boolean expressions
+        {
+            bool result = MathF.Abs(a - b) < 0.5f;
+            return result;
+        }
+
+        public static bool NearlyEqual(Vector2 a, Vector2 b)
+        {
+            return NearlyEqual(a.X, b.X) && NearlyEqual(a.Y, b.Y);
+        }
         
     }
 }

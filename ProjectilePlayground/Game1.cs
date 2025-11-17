@@ -20,11 +20,12 @@ namespace ProjectilePlayground
         private List<Projectile> _projectiles;
         private List<Timer> _timers;
         private List<RigidBody> _bodies;
+        private List<Vector2> _contacts;
         
-        
-        // for waiting projectiles
+        // for queues
         private Queue<Projectile> _projectileQueue;
         private Queue<TrailNode> _nodeQueue;
+        private bool isExit;
         bool queuing;
         bool tickqueuing;
 
@@ -92,7 +93,7 @@ namespace ProjectilePlayground
             startPos = new Vector2(40, 600);
             scale = 0.25f;
             initial_speed = 15f;
-            mass = 1;
+            mass = 2;
             initial_angle = 40f;
             radius = 0.5f;
             time = 0f;
@@ -115,8 +116,10 @@ namespace ProjectilePlayground
             isVisibleSliders = true;
 
             // pause screen
-            
             isPaused = false;
+
+            // closing the program
+            isExit = false;
 
 
             base.Initialize();
@@ -128,6 +131,11 @@ namespace ProjectilePlayground
 
 
             // TODO: use this.Content to load your game content here
+
+            projectile = new Projectile(texture, startPos, scale, baseSpeed, mass, baseAngle, radius, linearDragCoefficient, angularVelocity, angularDragCoefficient, restitution, isFrictionless);
+
+            pixelsPerM = projectile.ConversionToSI();
+
 
             var shootButton = new Button(Content.Load<Texture2D>("sprites/Button"), new Vector2(980, 660), 1.25f, Content.Load<SpriteFont>("fonts/font"), 0)
             {
@@ -291,25 +299,36 @@ namespace ProjectilePlayground
                 0f, 
                 0f, 
                 0f,
-                isFrictionless);
+                isFrictionless,
+                pixelsPerM);
 
             var testBody = RigidBody.CreateRectangleBody(
-                Content.Load<Texture2D>("sprites/button"),
-                new Vector2(300, 100),
-                1f,
+                Content.Load<Texture2D>("sprites/target"),
+                new Vector2(600, 500),
+                1.5f,
                 new Vector2(0, 0),
                 0.5f,
-                3f, // for handling collisions
+                10f, // for handling collisions
                 false,
                 0f,
                 0f,
                 0f,
-                isFrictionless);
+                isFrictionless,
+                pixelsPerM);
 
-
-            projectile = new Projectile(texture, startPos, scale, baseSpeed, mass, baseAngle, radius, linearDragCoefficient, angularVelocity, angularDragCoefficient, restitution, isFrictionless);
-
-            pixelsPerM = projectile.ConversionToSI();
+            var testBody2 = RigidBody.CreateRectangleBody(
+                Content.Load<Texture2D>("sprites/target"), // texture
+                new Vector2(800, 500), // pos
+                1f, // scale
+                new Vector2(0, 0), // linear velocity
+                0.5f, // restitution
+                5f, // mass for handling collisions
+                false, // static?
+                0f, // angular velocity
+                0f, // linear drag co
+                0f, // angular drag co
+                isFrictionless,
+                pixelsPerM);
 
             initial_speed *= pixelsPerM; // convert pixels/s to m/s
 
@@ -333,6 +352,8 @@ namespace ProjectilePlayground
                 cannon
             };
 
+            
+
             ResetAllSliders();
 
             _projectiles = new List<Projectile>
@@ -343,9 +364,12 @@ namespace ProjectilePlayground
             _bodies = new List<RigidBody>
             {
                 floorBody,
-                testBody
+                testBody,
+                testBody2
             };
 
+
+            _contacts = new List<Vector2> { };
             _projectileQueue = new Queue<Projectile> { };
             _nodeQueue = new Queue<TrailNode> { };
             queuing = false;
@@ -353,6 +377,7 @@ namespace ProjectilePlayground
 
             _timers = new List<Timer> { };
 
+            
         }
         // called everytime shootbutton is clicked, fires new projectile & sets up runtime timers
         private void Button_Click(object sender, System.EventArgs e)
@@ -364,7 +389,7 @@ namespace ProjectilePlayground
                 case 0: // shoot button
                     _bodies.Remove(projectile.body);
                     projectile = new Projectile(texture, startPos, scale, initial_speed, mass, initial_angle, radius, linearDragCoefficient, angularVelocity, angularDragCoefficient, restitution, isFrictionless);
-                    //Console.WriteLine(_bodies.Remove(projectile.body));
+                    
                     queuing = true;
 
                     foreach (var clock in _timers)
@@ -457,24 +482,31 @@ namespace ProjectilePlayground
         private void Tick(object sender, ElapsedEventArgs e)
         {
 
-            if (projectile.body.linearVelocity == new Vector2(0, 0))
+            if (projectile.body.linearVelocity == new Vector2(0, 0) && !isExit)
             {
             }
             else
             {
                 time = time + 0.1f;
-                TrailNode node = new TrailNode(
+                try
+                {
+                    TrailNode node = new TrailNode(
                     Content.Load<SpriteFont>("fonts/font"),
                     (startPos - projectile.position).Y / pixelsPerM,
                     time,
-                    VectorMaths.Length(projectile.position - startPos) / pixelsPerM ,
+                    VectorMaths.Length(projectile.position - startPos) / pixelsPerM,
                     texture,
                     new Vector2(projectile.position.X, projectile.position.Y - 4), // provide offset
                     .1f,
                     false
                     );
-                _nodeQueue.Enqueue(node);
-                tickqueuing = true;
+                    _nodeQueue.Enqueue(node);
+                    tickqueuing = true;
+                }
+                catch (Exception exception)
+                {
+                    Console.WriteLine(exception.ToString());
+                }
             }
         }
 
@@ -512,7 +544,7 @@ namespace ProjectilePlayground
         protected override void Update(GameTime gameTime)
         {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
-                Exit();
+                isExit = true;
             previousKeys = currentKeys;
             currentKeys = Keyboard.GetState();
 
@@ -540,7 +572,7 @@ namespace ProjectilePlayground
                         slider.Update(gameTime, environment);
                     }
 
-                
+
                 foreach (var body in _bodies)
                 {
                     body.Update(gameTime, environment);
@@ -554,67 +586,86 @@ namespace ProjectilePlayground
 
                         for (int j = 1; j < _bodies.Count; j++)
                         {
-                            if (Collisions.IntersectingPolygons(_bodies[i].CollisionRect.vertices, _bodies[(i+j) % (_bodies.Count)].CollisionRect.vertices, out Vector2 normal))
+                            if (Collisions.IntersectingPolygons(_bodies[i].CollisionRect.vertices, _bodies[(i + j) % (_bodies.Count)].CollisionRect.vertices, out Vector2 normal, out float depth))
                             {
 
-                                Collisions.ResolveCollisions(_bodies[i], _bodies[(i + j) % (_bodies.Count)], normal, environment);
-                                _bodies[i].isCollisionResolved = true;
-                                _bodies[(i + j) % (_bodies.Count)].isCollisionResolved = true;
+                                Collisions.GetContactPoints(
+                                    _bodies[i].CollisionRect.vertices,
+                                    _bodies[(i + j) % (_bodies.Count)].CollisionRect.vertices,
+                                    out Vector2 contact1,
+                                    out Vector2 contact2,
+                                    out int contactCount);
+                                Collisions.ResolveCollisionsWithRotation(_bodies[i], _bodies[(i + j) % (_bodies.Count)], normal, environment, contact1, contact2, contactCount);
+                                //Collisions.ResolveCollisionsBasic(_bodies[i], _bodies[(i + j) % (_bodies.Count)], normal, environment, contact1, contact2, contactCount);
+                                _contacts.Add(contact1);
+                                if (contactCount == 2)
+                                    _contacts.Add(contact2);
+                                
                             }
-                            else count++;
+                            else
+                            {
+                                count++;
+                                _bodies[i]._collidingWith.Remove(_bodies[(i + j) % (_bodies.Count)]);
+                            }
+                            
+                            if (count == _bodies.Count - 1)
+                            {
+                                _bodies[i].isCollisionResolved = false;
+                                
+                            }
+                            
                         }
-                        //Console.WriteLine(count);
-                        if (count == _bodies.Count - 1)
+                        //Console.WriteLine(_bodies[i]._collidingWith.Count);
+                    }
+
+                    foreach (var projectile in _projectiles)
+                    {
+                        projectile.Update(gameTime, environment);
+                    }
+
+
+                    if (projectile.body.previousLinearVelocity.Y < 0 && projectile.body.linearVelocity.Y > 0) // adding trail node at highest point
+                    {
+                        TrailNode node = new TrailNode(
+                            Content.Load<SpriteFont>("fonts/font"),
+                            (startPos - projectile.position).Y / pixelsPerM,
+                            (float)(DateTime.Now - timerStartTime).TotalSeconds,
+                            VectorMaths.Length(projectile.position - startPos) / pixelsPerM,
+                            texture,
+                            new Vector2(projectile.position.X, projectile.position.Y - 6), // provides an offset to place in middle of path
+                            .15f,
+                            true
+                            );
+                        _nodeQueue.Enqueue(node);
+                        tickqueuing = true;
+                    }
+
+                    if (queuing) // add projectile to projectile list
+                    {
+                        foreach (var newprojectile in _projectileQueue)
                         {
-                            _bodies[i].isCollisionResolved = false;
+                            _projectiles.Clear();
+                            _projectiles.Add(newprojectile);
+                            _bodies.Add(newprojectile.body);
                         }
+                        queuing = false;
+                        _projectileQueue.Clear();
                     }
-                }
-
-                foreach (var projectile in _projectiles)
-                {
-                    projectile.Update(gameTime, environment);
-                }
-
-
-                if (projectile.body.previousLinearVelocity.Y < 0 && projectile.body.linearVelocity.Y > 0) // adding trail node at highest point
-                {
-                    TrailNode node = new TrailNode(
-                        Content.Load<SpriteFont>("fonts/font"),
-                        (startPos - projectile.position).Y / pixelsPerM,
-                        (float)(DateTime.Now - timerStartTime).TotalSeconds,
-                        VectorMaths.Length(projectile.position - startPos) / pixelsPerM,
-                        texture,
-                        new Vector2(projectile.position.X, projectile.position.Y - 6), // provides an offset to place in middle of path
-                        .15f,
-                        true
-                        );
-                    _nodeQueue.Enqueue(node);
-                    tickqueuing = true;
-                }
-                
-                if (queuing) // add projectile to projectile list
-                {
-                    foreach (var newprojectile in _projectileQueue)
+                    if (tickqueuing) // add node to projectile
                     {
-                        _projectiles.Clear();
-                        _projectiles.Add(newprojectile);
-                        _bodies.Add(newprojectile.body);
+                        foreach (var node in _nodeQueue)
+                        {
+                            projectile._nodes.Add(node);
+                        }
+                        tickqueuing = false;
+                        _nodeQueue.Clear();
                     }
-                    queuing = false;
-                    _projectileQueue.Clear();
+
                 }
-                if (tickqueuing) // add node to projectile
-                {
-                    foreach (var node in _nodeQueue)
-                    {
-                        projectile._nodes.Add(node);
-                    }
-                    tickqueuing = false;
-                    _nodeQueue.Clear();
-                }
-            }
+                if (isExit) Exit();
+
                 base.Update(gameTime);
+            }
         }
 
         protected override void Draw(GameTime gameTime)
@@ -624,6 +675,7 @@ namespace ProjectilePlayground
             else
                 GraphicsDevice.Clear(Color.LightSlateGray);
                 // TODO: Add your drawing code here
+                
 
                 _spriteBatch.Begin(samplerState: SamplerState.LinearWrap);
             foreach (var projectile in _projectiles)
@@ -644,6 +696,13 @@ namespace ProjectilePlayground
                 {
                     slider.Draw(gameTime, _spriteBatch);
                 }
+
+            foreach (var contact in _contacts)
+            {
+                Primitives2D.FillRectangle(_spriteBatch, contact.X - 10, contact.Y -10 , 20, 20, Color.Red, 0f);
+            }
+            // clear contacts to not keep contacts that dont exit anymore
+            _contacts.Clear();
 
             if (isPaused)
                 menuButton.Draw(gameTime, _spriteBatch);

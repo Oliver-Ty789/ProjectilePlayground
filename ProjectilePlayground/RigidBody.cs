@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -30,21 +32,25 @@ namespace ProjectilePlayground
         public Vector2 staticFriction;
         public Vector2 dynamicFriction;
         public float rotation;
-        //public float rotationalVelocity;
+        public float projection;
+       
         public VerticesRectangle _collisionRect;
 
-        //public readonly float density;
+        public List<Vector2> _contactPoints;
+        public List<RigidBody> _collidingWith;
+
+       
         public readonly float mass;
         public readonly float restitution;
         public readonly float area;
+        public readonly float rotationalInertia;
 
         public bool isStatic;
         public bool isCollisionResolved;
         public bool isFrictionless;
 
         public readonly float radius;
-        //public readonly float width;
-        //public readonly float height;
+       
 
         public readonly ShapeType shapeType;
 
@@ -56,18 +62,16 @@ namespace ProjectilePlayground
         private Vector2 initialPos;
 
         // private instatiation as different shapes need different instantiations
-        private RigidBody(Texture2D texture, Vector2 position, float scale, Vector2 linearVelocity,  float mass, float restitution, float area, bool isStatic, float radius, ShapeType shapeType, float angularVelocity, float linearDragCoeffficient, float angularDragCoefficient, bool isFrictionless) : base(texture, position, scale)
+        private RigidBody(Texture2D texture, Vector2 position, float scale, Vector2 linearVelocity,  float mass, float restitution, float area, bool isStatic, float radius, ShapeType shapeType, float angularVelocity, float linearDragCoeffficient, float angularDragCoefficient, bool isFrictionless, float pixelsPerM) : base(texture, position, scale)
         {
             this.linearVelocity = linearVelocity;
             this.angularVelocity = angularVelocity;
             this.rotation = 0f;
             this.linearDragCoefficient = linearDragCoeffficient;
             this.angularDragCoefficient = angularDragCoefficient;
-            staticFrictionCoefficient = 0.6f;
-            dynamicFrictionCoefficient = 0.3f;
-            //this.rotationalVelocity = 0f;
-
-            //this.density = density;
+            staticFrictionCoefficient = 0.5f;
+            dynamicFrictionCoefficient = 0.2f;
+          
             this.mass = mass;
             this.restitution = restitution;
             this.area = area;
@@ -77,12 +81,17 @@ namespace ProjectilePlayground
             this.scale = scale;
             this.initialPos = position;
             this.radius = radius;
-            //this.width = width;
-            //this.height = height;
+            
             this.shapeType = shapeType;
             isCollisionResolved = false;
             this.isFrictionless = isFrictionless;
+
             _collisionRect = new VerticesRectangle(position, texture.Width, texture.Height, scale);
+            _contactPoints = new List<Vector2>()
+            {
+
+            };
+            _collidingWith = new List<RigidBody>() { };
 
             // adding an offset to compenstate the change in position for the source rect
 
@@ -91,20 +100,37 @@ namespace ProjectilePlayground
             _collisionRect = VerticesRectangle.GetTransformedRectangle(_collisionRect, 0f, offset, new Vector2(0, 0), 1f);
 
             CollisionRect = _collisionRect;
+
+            this.rotationalInertia = GetRotationalIntertia(pixelsPerM);
+            
         }
 
-        public static RigidBody CreateCircleBody(Texture2D texture, Vector2 position, float scale, Vector2 linearVelocity, float restitution, float radius, float mass, bool isStatic, float angularVelocity, float linearDragCoeffficient, float angularDragCoefficient, bool isFrictionless)
+        public static RigidBody CreateCircleBody(Texture2D texture, Vector2 position, float scale, Vector2 linearVelocity, float restitution, float radius, float mass, bool isStatic, float angularVelocity, float linearDragCoeffficient, float angularDragCoefficient, bool isFrictionless, float pixelsPerM)
         {
             float area = radius * radius * MathF.PI;
 
-            return new RigidBody(texture, position, scale, linearVelocity, mass, restitution, area, isStatic, radius, ShapeType.Circle, angularVelocity, linearDragCoeffficient, angularDragCoefficient, isFrictionless);
+            return new RigidBody(texture, position, scale, linearVelocity, mass, restitution, area, isStatic, radius, ShapeType.Circle, angularVelocity, linearDragCoeffficient, angularDragCoefficient, isFrictionless, pixelsPerM);
         }
 
-        public static RigidBody CreateRectangleBody(Texture2D texture, Vector2 position, float scale, Vector2 linearVelocity, float restitution, float mass, bool isStatic, float angularVelocity, float linearDragCoeffficient, float angularDragCoefficient, bool isFrictionless)
+        public static RigidBody CreateRectangleBody(Texture2D texture, Vector2 position, float scale, Vector2 linearVelocity, float restitution, float mass, bool isStatic, float angularVelocity, float linearDragCoeffficient, float angularDragCoefficient, bool isFrictionless, float pixelsPerM)
         {
-            float area = (texture.Width * texture.Height)*scale;
+            float area = (texture.Width * texture.Height)*scale*pixelsPerM;
 
-            return new RigidBody(texture, position, scale, linearVelocity, mass, restitution, area, isStatic, 0f, ShapeType.Rectangle, angularVelocity, linearDragCoeffficient, angularDragCoefficient, isFrictionless);
+            return new RigidBody(texture, position, scale, linearVelocity, mass, restitution, area, isStatic, 0f, ShapeType.Rectangle, angularVelocity, linearDragCoeffficient, angularDragCoefficient, isFrictionless, pixelsPerM);
+        }
+
+        private float GetRotationalIntertia(float pixelsPerM)
+        {
+            if (shapeType == ShapeType.Circle)
+            {
+                return 0.5f * mass * radius * radius;
+            }
+            else
+            {
+                float widthM = CollisionRect.Width / pixelsPerM;
+                float heightM = CollisionRect.Height / pixelsPerM;
+                return (1f/12f) * mass * (widthM * widthM  + heightM * heightM);
+            }
         }
 
 
@@ -113,6 +139,18 @@ namespace ProjectilePlayground
             position += linearVelocity * delta;
             _collisionRect = VerticesRectangle.GetTransformedRectangle(CollisionRect, 0f, linearVelocity * delta, CollisionRect.Center + position, 1f);
             CollisionRect = _collisionRect;
+            rotation += angularVelocity * delta;
+            var changeInRotation = angularVelocity * delta;
+           
+
+            // apply to collision rect
+
+        
+            if (shapeType == ShapeType.Rectangle)
+            {
+                _collisionRect = VerticesRectangle.GetTransformedRectangle(CollisionRect, changeInRotation, Vector2.Zero, position, 1f);
+                CollisionRect = _collisionRect;
+            }
         }
 
         private void ApplyDrag(Environment environment)
@@ -149,16 +187,23 @@ namespace ProjectilePlayground
             // magnus
             resultantForce += magnusForce;
 
-            var resultantMag = MathF.Abs(VectorMaths.Length(resultantForce));
+
+            // these magnitudes need to be parallel, therefore they need to be projected onto one another (edit: try to apply this in collisions)
+        
+           
+            var acceleration = new Vector2(resultantForce.X / mass, resultantForce.Y / mass);
+            projection = VectorMaths.DotProduct(acceleration, staticFriction);
+            var accMag = MathF.Abs(VectorMaths.Length(acceleration));
             var staticMag = MathF.Abs(VectorMaths.Length(staticFriction));
 
-            if (staticMag < resultantMag) // apply dynamic friction
+            
+
+            if (staticMag < accMag) // apply dynamic friction
             {
                 linearVelocity += dynamicFriction;
                 var dynamicFrictionMag = VectorMaths.Length(dynamicFriction);
                 angularVelocity -= dynamicFrictionMag * (0.005f * angularVelocity);
-                Console.WriteLine(angularVelocity);
-                Console.WriteLine(dynamicFriction);
+                
             }
             // appling static friction is merely not moving the object as there is no further external forces
             else
@@ -190,12 +235,14 @@ namespace ProjectilePlayground
                 // F = ma
                 var acceleration = new Vector2(resultantForce.X / mass, resultantForce.Y / mass);
 
-                linearVelocity += acceleration * delta;
+                linearVelocity += acceleration * delta; // as 60 ticks per second
                 if (angularVelocity > 0)
                     angularVelocity -= resistiveAngularForce;
                 else
                     angularVelocity += resistiveAngularForce;
-                rotation += angularVelocity * delta;
+                
+            
+
             }
             else
             {
@@ -217,11 +264,14 @@ namespace ProjectilePlayground
         {
             var pivot = new Vector2(SourceRect.Width / 2f, SourceRect.Height / 2f);
             spriteBatch.Draw(texture, DrawingRect, SourceRect, Color.White, rotation, pivot, SpriteEffects.None, 0f);
-
+            
             for (int i = 0; i < 4; i++)
             {
                 Primitives2D.DrawLine(spriteBatch, CollisionRect.vertices[i], CollisionRect.vertices[(i+1)%4], Color.White);
             }
+
+            //Primitives2D.FillRectangle(spriteBatch, CollisionRect.Center.X + position.X, CollisionRect.Center.X + position.Y , 10, 10, Color.White);
+            Primitives2D.FillRectangle(spriteBatch, position.X, position.Y, 10, 10, Color.Orange);
             base.Draw(gameTime, spriteBatch);
         }
 
@@ -239,8 +289,6 @@ namespace ProjectilePlayground
                 }
                 else
                 {
-                    //ApplyDrag(environment);
-                    //ApplyMagnus();
                     if (!isFrictionless)
                     {
                         ApplyFriction(environment, delta);
@@ -250,14 +298,6 @@ namespace ProjectilePlayground
                 }
                 
                 ApplyVelocity(delta);
-            }
-
-            if (shapeType == ShapeType.Rectangle)
-            {
-                for (int i = 0;i < 4;i++)
-                {
-                   // Console.WriteLine($"{i} : {CollisionRect.vertices[i]}");
-                }
             }
 
             base.Update(gameTime, environment);

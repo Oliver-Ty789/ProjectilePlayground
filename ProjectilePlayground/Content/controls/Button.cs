@@ -62,7 +62,7 @@ namespace ProjectilePlayground.Content.controls
 
             // checking if mouse is hovering and or clicking the button
 
-            if (Collisions.IntersectingPolygons(mouseRect.vertices, CollisionRect.vertices, out Vector2 normal))
+            if (Collisions.IntersectingPolygons(mouseRect.vertices, CollisionRect.vertices, out Vector2 normal, out float depth))
             {
                 isHovering = true;
 
