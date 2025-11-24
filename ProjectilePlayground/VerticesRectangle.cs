@@ -25,7 +25,10 @@ namespace ProjectilePlayground
         public float Right;
         public float Top;
         public float Bottom;
+        public float scale;
+
         public float Width;
+   
         public float Height;
         public float X;
         public float Y;
@@ -41,6 +44,7 @@ namespace ProjectilePlayground
                 position + new Vector2(0, height * scale)
             };
 
+            this.scale = scale;
             Left = position.X;
             Right = position.X + (width * scale);
             Top = position.Y;

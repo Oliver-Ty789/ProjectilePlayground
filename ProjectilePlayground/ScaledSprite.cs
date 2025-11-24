@@ -1,4 +1,5 @@
-﻿using System;
+﻿using System; 
+
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -13,7 +14,11 @@ namespace ProjectilePlayground
     {
 
         private VerticesRectangle _collisionRect;
-        public float scale;
+        public float scale
+        {  
+            get;
+            set;
+        }
 
         public Microsoft.Xna.Framework.Rectangle DrawingRect // dependent on position at time of call, better than a variable
         {
@@ -59,6 +64,11 @@ namespace ProjectilePlayground
         public ScaledSprite(Texture2D texture, Vector2 position, float scale) : base(texture, position)
         {
             this.scale = scale;
+        }
+
+        public VerticesRectangle Set_collisionRect(VerticesRectangle tempRect)
+        {
+            return _collisionRect = tempRect;
         }
 
         public virtual void Draw(GameTime gameTime, SpriteBatch spriteBatch)

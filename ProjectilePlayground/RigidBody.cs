@@ -139,12 +139,12 @@ namespace ProjectilePlayground
             if (shapeType == ShapeType.Circle)
             {
                 float radiusPix = CollisionRect.Width;
-                return 0.5f * mass * radiusPix * radiusPix;
+                return (1f/2f) * mass * radiusPix * radiusPix;
             }
             else
             {
-                float widthM = CollisionRect.Width;
-                float heightM = CollisionRect.Height;
+                float widthM = CollisionRect.Width ;
+                float heightM = CollisionRect.Height ;
                 return (1f/12f) * mass * (widthM * widthM  + heightM * heightM);
             }
         }

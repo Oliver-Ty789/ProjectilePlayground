@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Timers;
 using System.Xml.Linq;
 using Microsoft.Xna.Framework;
@@ -13,7 +14,8 @@ namespace ProjectilePlayground
     public class Game1 : Game
     {
         private GraphicsDeviceManager _graphics;
-        private SpriteBatch _spriteBatch;
+        private SpriteBatch _spriteBatchUI;
+        private SpriteBatch _spriteBatchCamera;
 
         private Slider [] _sliders;
         private Button [] _buttons;
@@ -21,6 +23,7 @@ namespace ProjectilePlayground
         private List<Timer> _timers;
         private List<RigidBody> _bodies;
         private List<Vector2> _contacts;
+        private List<ScaledSprite> _scalableSprites;
         
         // for queues
         private Queue<Projectile> _projectileQueue;
@@ -30,6 +33,8 @@ namespace ProjectilePlayground
         bool tickqueuing;
 
         Projectile projectile;
+
+        Camera2D camera;
 
         Environment environment;
 
@@ -48,10 +53,10 @@ namespace ProjectilePlayground
         // parameters for the projectile
 
         Texture2D texture;
-        float scale;
+        float projectileScale;
         Vector2 startPos;
         float initial_speed;
-        int mass;
+        float mass;
         float initial_angle;
         float radius;
         float time;
@@ -71,6 +76,9 @@ namespace ProjectilePlayground
         float baseAngularVelocity;
         float baseAngularDragCoefficient;
 
+        // global values
+
+        float globalScale;
        
 
         public Game1()
@@ -91,9 +99,9 @@ namespace ProjectilePlayground
             // parameters for first projectile (test)
             texture = Content.Load<Texture2D>("sprites/Final_face_circle");
             startPos = new Vector2(40, 600);
-            scale = 0.25f;
+            projectileScale = 0.25f;
             initial_speed = 15f;
-            mass = 2;
+            mass = 2f;
             initial_angle = 40f;
             radius = 0.5f;
             time = 0f;
@@ -121,20 +129,26 @@ namespace ProjectilePlayground
             // closing the program
             isExit = false;
 
+            // global scale 
+            globalScale = 1f;
+
 
             base.Initialize();
         }
 
         protected override void LoadContent()
         {
-            _spriteBatch = new SpriteBatch(GraphicsDevice);
+            _spriteBatchUI = new SpriteBatch(GraphicsDevice);
 
+            _spriteBatchCamera = new SpriteBatch(GraphicsDevice);
 
             // TODO: use this.Content to load your game content here
 
-            projectile = new Projectile(texture, startPos, scale, baseSpeed, mass, baseAngle, radius, linearDragCoefficient, angularVelocity, angularDragCoefficient, restitution, isFrictionless);
+            projectile = new Projectile(texture, startPos, projectileScale, baseSpeed, mass, baseAngle, radius, linearDragCoefficient, angularVelocity, angularDragCoefficient, restitution, isFrictionless);
 
             pixelsPerM = projectile.ConversionToSI();
+
+            camera = new Camera2D();
 
 
             var shootButton = new Button(Content.Load<Texture2D>("sprites/Button"), new Vector2(980, 660), 1.25f, Content.Load<SpriteFont>("fonts/font"), 0)
@@ -274,7 +288,7 @@ namespace ProjectilePlayground
             var cannon = new Cannon(
                 Content.Load<Texture2D>("sprites/cannonHead"),
                 new Vector2(50, 610),
-                1f,
+                1f * globalScale,
                 Content.Load<Texture2D>("sprites/cannonWheel"),
                 Content.Load<SpriteFont>("fonts/font"),
                 Content.Load<Texture2D>("sprites/flashingCursor"),
@@ -368,6 +382,15 @@ namespace ProjectilePlayground
                 testBody2
             };
 
+            _scalableSprites = new List<ScaledSprite>
+            {
+                testBody,
+                testBody2,
+                cannon,
+                projectile,
+
+            };
+
 
             _contacts = new List<Vector2> { };
             _projectileQueue = new Queue<Projectile> { };
@@ -388,7 +411,7 @@ namespace ProjectilePlayground
             { 
                 case 0: // shoot button
                     _bodies.Remove(projectile.body);
-                    projectile = new Projectile(texture, startPos, scale, initial_speed, mass, initial_angle, radius, linearDragCoefficient, angularVelocity, angularDragCoefficient, restitution, isFrictionless);
+                    projectile = new Projectile(texture, startPos, projectileScale, initial_speed, mass, initial_angle, radius, linearDragCoefficient, angularVelocity, angularDragCoefficient, restitution, isFrictionless);
                     
                     queuing = true;
 
@@ -589,6 +612,35 @@ namespace ProjectilePlayground
             }
         }
 
+        // to handle zooming in and out
+        //private void ScaleObjects(float changeInScale)
+        //{
+        //    /// change in scale is applied to each sprite and its position is offset accordingly
+        //    globalScale += changeInScale;
+        //    foreach (var sprite in _scalableSprites)
+        //    {
+        //        float dx = ((sprite.CollisionRect.Width / 2) *( 1f +changeInScale)) - (sprite.CollisionRect.Width / 2);
+        //        float dy = ((sprite.CollisionRect.Height / 2) *(1f + changeInScale)) - (sprite.CollisionRect.Height / 2);
+        //        //Console.WriteLine(sprite.CollisionRect.Width);
+        //        sprite.scale *= 1f+changeInScale;
+
+        //        // offset is based on change in scale and width of the sprite
+        //        Vector2 offset = new Vector2(0, -dy);
+
+        //        sprite.position += offset;
+
+
+        //        sprite.CollisionRect = sprite.GetTransformedCollisionRect(0f, offset , 1f + changeInScale);
+        //    }
+           
+        //    pixelsPerM = projectile.ConversionToSI();
+        //    Console.WriteLine($"globalScale: {globalScale}");
+        //    Console.WriteLine($"pixelsPerM: {pixelsPerM}");
+            
+
+        //    projectileScale += changeInScale;
+        //}
+
         protected override void Update(GameTime gameTime)
         {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
@@ -606,6 +658,24 @@ namespace ProjectilePlayground
                 else
                     isPaused = true;
             }
+
+
+            // zooming in and out (temp)
+            if (Keyboard.GetState().IsKeyDown(Keys.OemMinus))
+            {
+               
+                camera.Zoom(-0.1f);
+                //camera.UpdateScalableElements(_scalableSprites);
+            }
+            if (Keyboard.GetState().IsKeyDown(Keys.OemPlus))
+            {
+                
+                camera.Zoom(0.1f);
+                //camera.UpdateScalableElements(_scalableSprites);
+            }
+
+            
+           
 
             // TODO: Add your update logic here
             if (!isPaused)
@@ -643,8 +713,8 @@ namespace ProjectilePlayground
                                     out Vector2 contact1,
                                     out Vector2 contact2,
                                     out int contactCount);
-                                Collisions.ResolveCollisionsWithRotation(_bodies[i], _bodies[(i + j) % (_bodies.Count)], normal, environment, contact1, contact2, contactCount);
-                                //Collisions.ResolveCollisionsBasic(_bodies[i], _bodies[(i + j) % (_bodies.Count)], normal, environment, contact1, contact2, contactCount);
+                                //Collisions.ResolveCollisionsWithRotation(_bodies[i], _bodies[(i + j) % (_bodies.Count)], normal, environment, contact1, contact2, contactCount, pixelsPerM);
+                                Collisions.ResolveCollisionsBasic(_bodies[i], _bodies[(i + j) % (_bodies.Count)], normal, environment, contact1, contact2, contactCount);
                                 _contacts.Add(contact1);
                                 if (contactCount == 2)
                                     _contacts.Add(contact2);
@@ -722,40 +792,51 @@ namespace ProjectilePlayground
                 GraphicsDevice.Clear(Color.CornflowerBlue);
             else
                 GraphicsDevice.Clear(Color.LightSlateGray);
-                // TODO: Add your drawing code here
-                
+            // TODO: Add your drawing code here
 
-                _spriteBatch.Begin(samplerState: SamplerState.LinearWrap);
+            _spriteBatchCamera.Begin(samplerState: SamplerState.LinearWrap, transformMatrix: camera.GetCameraScaleMatrix());
+            _spriteBatchUI.Begin(samplerState: SamplerState.LinearWrap);
+            
             foreach (var projectile in _projectiles)
             {
-                projectile.Draw(gameTime, _spriteBatch);
+                projectile.Draw(gameTime, _spriteBatchCamera);
             }
             foreach (var body in _bodies)
             {
-                if (!(body.shapeType == ShapeType.Circle)) // dont draw projectiles
-                    body.Draw(gameTime, _spriteBatch);
+                if (body.isStatic)
+                {
+                    body.Draw(gameTime, _spriteBatchUI); // dont scale floor
+                }
+                else if (!(body.shapeType == ShapeType.Circle)) // dont draw projectiles
+                    body.Draw(gameTime, _spriteBatchCamera);
+                
             }
             foreach (var button in _buttons)
             {
-                button.Draw(gameTime, _spriteBatch);
+                button.Draw(gameTime, _spriteBatchUI);
             }
             if (isVisibleSliders)
                 foreach (var slider in _sliders)
                 {
-                    slider.Draw(gameTime, _spriteBatch);
+                    slider.Draw(gameTime, _spriteBatchUI);
                 }
 
-            foreach (var contact in _contacts)
-            {
-                Primitives2D.FillRectangle(_spriteBatch, contact.X - 10, contact.Y -10 , 20, 20, Color.Red, 0f);
-            }
+            //foreach (var contact in _contacts)
+            //{
+            //    Primitives2D.FillRectangle(_spriteBatch, contact.X - 10, contact.Y -10 , 20, 20, Color.Red, 0f);
+            //}
             // clear contacts to not keep contacts that dont exit anymore
             _contacts.Clear();
 
             if (isPaused)
-                menuButton.Draw(gameTime, _spriteBatch);
+                menuButton.Draw(gameTime, _spriteBatchUI);
 
-            _spriteBatch.End();
+            _spriteBatchUI.End();
+            _spriteBatchCamera.End();
+
+            
+
+
 
             base.Draw(gameTime);
         }

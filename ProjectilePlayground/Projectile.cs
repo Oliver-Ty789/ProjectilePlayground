@@ -18,7 +18,7 @@ namespace ProjectilePlayground
         private VerticesRectangle _collisionRect;
         
 
-        public Projectile(Texture2D texture, Vector2 position, float scale, float initial_s, int mass, float initial_a, float radius, float linearDragCoefficient, float angularVelocity, float angularDragCoefficient, float restitution, bool isFrictionless) : base (texture, position, scale)
+        public Projectile(Texture2D texture, Vector2 position, float scale, float initial_s, float mass, float initial_a, float radius, float linearDragCoefficient, float angularVelocity, float angularDragCoefficient, float restitution, bool isFrictionless) : base (texture, position, scale)
         {
             this.radius = radius;
             _collisionRect = new VerticesRectangle(position, texture.Width, texture.Height, scale);
