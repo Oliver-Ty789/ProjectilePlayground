@@ -179,6 +179,14 @@ namespace ProjectilePlayground
 
             tickFrictionButton.Click += Button_Click;
 
+            var zoomInButton = new Button(Content.Load<Texture2D>("sprites/zoomIn"), new Vector2(70, 20), 0.3f, Content.Load<SpriteFont>("fonts/font"), 4);
+           
+            zoomInButton.Click += Button_Click;
+
+            var zoomOutButton = new Button(Content.Load<Texture2D>("sprites/zoomOut"), new Vector2(20, 20), 0.3f, Content.Load<SpriteFont>("fonts/font"), 5);
+
+            zoomOutButton.Click += Button_Click;
+
             menuButton = new Button(Content.Load<Texture2D>("sprites/Button"), new Vector2(50, 100), 8f, Content.Load<SpriteFont>("fonts/font"), 1)
             {
                 text = "PRESS 'm' TO RETURN TO SIM \n \n PRESS 'esc' TO EXIT PROGRAM",
@@ -354,6 +362,8 @@ namespace ProjectilePlayground
                 resetButton,
                 tickProjectilesButton,
                 tickFrictionButton,
+                zoomInButton,
+                zoomOutButton,
             };
 
             _sliders = new Slider[]
@@ -487,6 +497,8 @@ namespace ProjectilePlayground
                     _bodies.Add(testBody );
                     _bodies.Add(testBody2);
 
+                    camera.ResetZoom();
+
                     break;
                 case 2:
                     if (isVisibleSliders)
@@ -511,6 +523,14 @@ namespace ProjectilePlayground
 
                         
                     }
+                    break;
+
+                case 4: // zooming in
+                    camera.Zoom(0.1f);
+                    break;
+
+                case 5: // zooming out
+                    camera.Zoom(-0.1f);
                     break;
 
                 default:
@@ -612,34 +632,7 @@ namespace ProjectilePlayground
             }
         }
 
-        // to handle zooming in and out
-        //private void ScaleObjects(float changeInScale)
-        //{
-        //    /// change in scale is applied to each sprite and its position is offset accordingly
-        //    globalScale += changeInScale;
-        //    foreach (var sprite in _scalableSprites)
-        //    {
-        //        float dx = ((sprite.CollisionRect.Width / 2) *( 1f +changeInScale)) - (sprite.CollisionRect.Width / 2);
-        //        float dy = ((sprite.CollisionRect.Height / 2) *(1f + changeInScale)) - (sprite.CollisionRect.Height / 2);
-        //        //Console.WriteLine(sprite.CollisionRect.Width);
-        //        sprite.scale *= 1f+changeInScale;
-
-        //        // offset is based on change in scale and width of the sprite
-        //        Vector2 offset = new Vector2(0, -dy);
-
-        //        sprite.position += offset;
-
-
-        //        sprite.CollisionRect = sprite.GetTransformedCollisionRect(0f, offset , 1f + changeInScale);
-        //    }
-           
-        //    pixelsPerM = projectile.ConversionToSI();
-        //    Console.WriteLine($"globalScale: {globalScale}");
-        //    Console.WriteLine($"pixelsPerM: {pixelsPerM}");
-            
-
-        //    projectileScale += changeInScale;
-        //}
+      
 
         protected override void Update(GameTime gameTime)
         {

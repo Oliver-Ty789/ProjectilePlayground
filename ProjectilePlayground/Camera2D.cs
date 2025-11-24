@@ -49,7 +49,10 @@ namespace ProjectilePlayground
             Console.WriteLine($"zoom  {zoom}");
         }
 
-       
+        public void ResetZoom()
+        {
+            zoom = 1f;
+        }
         public Matrix GetCameraScaleMatrix()
         {
             /// only need to return a Matrix if acutally tried to scale this tick
