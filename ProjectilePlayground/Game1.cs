@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Timers;
 using System.Xml.Linq;
+using CsvHelper;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -50,22 +53,30 @@ namespace ProjectilePlayground
         private Button menuButton;
 
         
-        // parameters for the projectile
+        // parameters for the projectile (temporary)
 
-        Texture2D texture;
-        float projectileScale;
-        Vector2 startPos;
-        float initial_speed;
-        float mass;
-        float initial_angle;
-        float radius;
-        float time;
-        float linearDragCoefficient;
-        float angularVelocity;
-        float angularDragCoefficient;
-        float restitution;
+       
+        readonly Vector2 startPos = new(50,605);
         DateTime timerStartTime;
         bool isFrictionless;
+        float initial_speed;
+        float initial_angle;
+        float angularVelocity;
+        float time;
+
+        readonly string presetsPath = @"C:\Users\olive\source\repos\ProjectilePlayground\ProjectilePlayground\presets.csv";
+        string presetName;
+        ProjectileProperties projectileProperties;
+
+
+        /// <summary>
+        /// this is to mainatain trail node size for all different presets for their different image sizes
+        /// </summary>
+        readonly float desiredSize = 15f;
+        readonly float desiredSizeBig = 25f;
+        float trailNodeScale;
+        float trailBigNodeScale;
+
 
         // base values
 
@@ -97,19 +108,15 @@ namespace ProjectilePlayground
 
 
             // parameters for first projectile (test)
-            texture = Content.Load<Texture2D>("sprites/Final_face_circle");
-            startPos = new Vector2(40, 600);
-            projectileScale = 0.25f;
-            initial_speed = 15f;
-            mass = 2f;
-            initial_angle = 40f;
-            radius = 0.5f;
-            time = 0f;
-            linearDragCoefficient = 0f;
-            angularVelocity = 0f;
-            angularDragCoefficient = 0f;
-            restitution = 0.5f;
+            
             isFrictionless = true;
+            initial_speed = 15f;
+            initial_angle = 45f;
+
+            presetName = "basic";
+            projectileProperties = new ProjectileProperties();
+
+            Get_CsvData();
 
 
             // slider base properties
@@ -144,8 +151,8 @@ namespace ProjectilePlayground
 
             // TODO: use this.Content to load your game content here
 
-            projectile = new Projectile(texture, startPos, projectileScale, baseSpeed, mass, baseAngle, radius, linearDragCoefficient, angularVelocity, angularDragCoefficient, restitution, isFrictionless);
-
+            projectile = new Projectile(Content.Load<Texture2D>("sprites/"+projectileProperties.path), startPos, projectileProperties.scale, baseSpeed, projectileProperties.mass, baseAngle, projectileProperties.radius, projectileProperties.linearDragCoefficient, angularVelocity, projectileProperties.angularDragCoefficient, projectileProperties.coeffiecentOfResitution, isFrictionless);
+            
             pixelsPerM = projectile.ConversionToSI();
 
             camera = new Camera2D();
@@ -177,6 +184,7 @@ namespace ProjectilePlayground
                 text = "FRICTION"
             };
 
+
             tickFrictionButton.Click += Button_Click;
 
             var zoomInButton = new Button(Content.Load<Texture2D>("sprites/zoomIn"), new Vector2(70, 20), 0.3f, Content.Load<SpriteFont>("fonts/font"), 4);
@@ -191,6 +199,34 @@ namespace ProjectilePlayground
             {
                 text = "PRESS 'm' TO RETURN TO SIM \n \n PRESS 'esc' TO EXIT PROGRAM",
             };
+
+            var tennisBallButton = new Button(Content.Load<Texture2D>("sprites/Button"), new Vector2(680, 680), 0.6f, Content.Load<SpriteFont>("fonts/font"), 6)
+            {
+                text = "Tennis ball",
+            };
+
+            tennisBallButton.Click += Button_Click;
+
+            var basicBallButton = new Button(Content.Load<Texture2D>("sprites/Button"), new Vector2(580, 680), 0.6f, Content.Load<SpriteFont>("fonts/font"), 7)
+            {
+                text = "Custom",
+            };
+
+            basicBallButton.Click += Button_Click;
+
+            var beachBallButton = new Button(Content.Load<Texture2D>("sprites/Button"), new Vector2(780, 680), 0.6f, Content.Load<SpriteFont>("fonts/font"), 8)
+            {
+                text = "Beach ball",
+            };
+
+            beachBallButton.Click += Button_Click;
+
+            var cannonBallButton = new Button(Content.Load<Texture2D>("sprites/Button"), new Vector2(880, 680), 0.6f, Content.Load<SpriteFont>("fonts/font"), 9)
+            {
+                text = "Cannon ball",
+            };
+
+            cannonBallButton.Click += Button_Click;
 
 
             var speedSlider = new Slider(Content.Load<Texture2D>("sprites/scroller"), 
@@ -215,8 +251,8 @@ namespace ProjectilePlayground
 
             var gravitySlider = new Slider(
                 Content.Load<Texture2D>("sprites/scroller"),
-                new Vector2(800, 200),
-                2f,
+                new Vector2(950, 200),
+                1.25f,
                 Content.Load<SpriteFont>("fonts/font"),
                 Content.Load<Texture2D>("sprites/sliderbar"),
                 Content.Load<Texture2D>("sprites/flashingCursor"),
@@ -235,8 +271,8 @@ namespace ProjectilePlayground
 
             var dragSlider = new Slider(
                 Content.Load<Texture2D>("sprites/scroller"),
-                new Vector2(800, 100),
-                2f,
+                new Vector2(950, 100),
+                1.25f,
                 Content.Load<SpriteFont>("fonts/font"),
                 Content.Load<Texture2D>("sprites/sliderbar"),
                 Content.Load<Texture2D>("sprites/flashingCursor"),
@@ -255,8 +291,8 @@ namespace ProjectilePlayground
 
             var angularDragSlider = new Slider(
                 Content.Load<Texture2D>("sprites/scroller"),
-                new Vector2(800, 300),
-                2f,
+                new Vector2(950, 300),
+                1.25f,
                 Content.Load<SpriteFont>("fonts/font"),
                 Content.Load<Texture2D>("sprites/sliderbar"),
                 Content.Load<Texture2D>("sprites/flashingCursor"),
@@ -275,8 +311,8 @@ namespace ProjectilePlayground
 
             var angularSlider = new Slider(
                 Content.Load<Texture2D>("sprites/scroller"),
-                new Vector2(800, 400),
-                2f,
+                new Vector2(950, 400),
+                1.25f,
                 Content.Load<SpriteFont>("fonts/font"),
                 Content.Load<Texture2D>("sprites/sliderbar"),
                 Content.Load<Texture2D>("sprites/flashingCursor"),
@@ -311,8 +347,8 @@ namespace ProjectilePlayground
             cannon.Click += ScrollerClick;
 
             var floorBody = RigidBody.CreateRectangleBody(
-                Content.Load<Texture2D>("sprites/floor"), 
-                new Vector2(640,750), 
+                Content.Load<Texture2D>("sprites/floorLong"), 
+                new Vector2(640,730), 
                 1f, 
                 new Vector2(0, 0), 
                 1f, 
@@ -364,6 +400,10 @@ namespace ProjectilePlayground
                 tickFrictionButton,
                 zoomInButton,
                 zoomOutButton,
+                tennisBallButton,
+                basicBallButton,
+                cannonBallButton,
+                beachBallButton
             };
 
             _sliders = new Slider[]
@@ -412,6 +452,27 @@ namespace ProjectilePlayground
 
             
         }
+
+        private void Get_CsvData()
+        {
+            using var reader = new StreamReader(presetsPath);
+            using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
+            var records = csv.GetRecords<ProjectileProperties>();
+
+            foreach (ProjectileProperties record in records)
+            {
+                if (record.name == presetName)
+                {
+                    projectileProperties = record;
+                    trailNodeScale = desiredSize / Content.Load<Texture2D>("sprites/" + projectileProperties.path).Width;
+                    trailBigNodeScale = desiredSizeBig / Content.Load<Texture2D>("sprites/" + projectileProperties.path).Width;
+
+                }
+            }
+            Console.WriteLine(projectileProperties.name);
+        }
+
+
         // called everytime shootbutton is clicked, fires new projectile & sets up runtime timers
         private void Button_Click(object sender, System.EventArgs e)
         {
@@ -421,8 +482,10 @@ namespace ProjectilePlayground
             { 
                 case 0: // shoot button
                     _bodies.Remove(projectile.body);
-                    projectile = new Projectile(texture, startPos, projectileScale, initial_speed, mass, initial_angle, radius, linearDragCoefficient, angularVelocity, angularDragCoefficient, restitution, isFrictionless);
-                    
+                    Get_CsvData();
+                    projectile = new Projectile(Content.Load<Texture2D>("sprites/" + projectileProperties.path), startPos, projectileProperties.scale, initial_speed, projectileProperties.mass, initial_angle, projectileProperties.radius, projectileProperties.linearDragCoefficient, angularVelocity, projectileProperties.angularDragCoefficient, projectileProperties.coeffiecentOfResitution, isFrictionless);
+
+
                     queuing = true;
 
                     foreach (var clock in _timers)
@@ -446,14 +509,14 @@ namespace ProjectilePlayground
                     initial_speed = baseSpeed * pixelsPerM;
                     environment.gravity = new Vector2(0, baseGravity * pixelsPerM);
                     angularVelocity = baseAngularVelocity;
-                    linearDragCoefficient = baselinearDragCoefficient;
-                    angularDragCoefficient = baseAngularDragCoefficient;
+                    projectileProperties.linearDragCoefficient = baselinearDragCoefficient;
+                    projectileProperties.angularDragCoefficient = baseAngularDragCoefficient;
                     ResetAllSliders(); // sets position of sliders to correct place
                     // reset all rigid bodies
                     _bodies.Clear();
                     var floorBody = RigidBody.CreateRectangleBody(
-                    Content.Load<Texture2D>("sprites/floor"),
-                    new Vector2(640, 750),
+                    Content.Load<Texture2D>("sprites/floorLong"),
+                    new Vector2(640, 730),
                     1f,
                     new Vector2(0, 0),
                     1f,
@@ -533,6 +596,24 @@ namespace ProjectilePlayground
                     camera.Zoom(-0.1f);
                     break;
 
+                case 6: // tennis ball preset
+                    presetName = "tennis ball";                    
+                    break;
+
+                case 7: // custom ball preset
+                    presetName = "basic";
+                    break;
+
+                case 8: // beach ball preset
+                    presetName = "beach ball";
+                    break;
+
+                case 9: // cannon ball preset
+                    presetName = "cannon ball";
+                    break;
+
+
+
                 default:
                     break;
 
@@ -555,13 +636,13 @@ namespace ProjectilePlayground
                     environment.gravity = new Vector2(0 ,e.property * pixelsPerM);
                     break;
                 case 3:
-                    linearDragCoefficient = e.property;
+                    projectileProperties.linearDragCoefficient = e.property;
                     break;
                 case 4:
                     angularVelocity = e.property;
                     break;
                 case 5:
-                    angularDragCoefficient = e.property;
+                    projectileProperties.angularDragCoefficient = e.property;
                     break;
                 default:
                     break;
@@ -586,9 +667,9 @@ namespace ProjectilePlayground
                     (startPos - projectile.position).Y / pixelsPerM,
                     time,
                     VectorMaths.Length(projectile.position - startPos) / pixelsPerM,
-                    texture,
+                    Content.Load<Texture2D>("sprites/"+projectileProperties.path),
                     new Vector2(projectile.position.X, projectile.position.Y - 4), // provide offset
-                    .1f,
+                    trailNodeScale,
                     false
                     );
                     _nodeQueue.Enqueue(node);
@@ -596,6 +677,7 @@ namespace ProjectilePlayground
                 }
                 catch (Exception exception)
                 {
+                    Console.WriteLine("yo");
                     Console.WriteLine(exception.ToString());
                 }
             }
@@ -675,23 +757,23 @@ namespace ProjectilePlayground
             {
                 foreach (var button in _buttons)
                 {
-                    button.Update(gameTime, environment);
+                    button.Update(gameTime, environment, camera);
                 }
                 if (isVisibleSliders)
                     foreach (var slider in _sliders)
                     {
-                        slider.Update(gameTime, environment);
+                        slider.Update(gameTime, environment, camera);
                     }
 
 
                 foreach (var body in _bodies)
                 {
-                    body.Update(gameTime, environment);
+                    body.Update(gameTime, environment, camera);
                 }
 
                 if (_bodies.Count > 1) // only try to detect collisions if more than one rigid body present
                 {
-                    for (int i = 0; i < _bodies.Count; i++) // handling collisions *temp*
+                    for (int i = 0; i < _bodies.Count; i++) // handling collisions *t
                     {
                         int count = 0;
 
@@ -711,15 +793,18 @@ namespace ProjectilePlayground
                                 _contacts.Add(contact1);
                                 if (contactCount == 2)
                                     _contacts.Add(contact2);
+
+                                Console.WriteLine(_bodies[i].shapeType);
+                                Console.WriteLine(_bodies[i]._collidingWith.Count);
                                 
                             }
-                            else
+                            else // if not collidingn with certain rigid body, remove from colliding list
                             {
                                 count++;
                                 _bodies[i]._collidingWith.Remove(_bodies[(i + j) % (_bodies.Count)]);
                             }
                             
-                            if (count == _bodies.Count - 1)
+                            if (count == _bodies.Count - 1) // if not colliding with anything, make collision resloved false
                             {
                                 _bodies[i].isCollisionResolved = false;
                                 
@@ -731,7 +816,7 @@ namespace ProjectilePlayground
 
                     foreach (var projectile in _projectiles)
                     {
-                        projectile.Update(gameTime, environment);
+                        projectile.Update(gameTime, environment, camera);
                     }
 
 
@@ -742,9 +827,9 @@ namespace ProjectilePlayground
                             (startPos - projectile.position).Y / pixelsPerM,
                             (float)(DateTime.Now - timerStartTime).TotalSeconds,
                             VectorMaths.Length(projectile.position - startPos) / pixelsPerM,
-                            texture,
+                            Content.Load<Texture2D>("sprites/"+projectileProperties.path),
                             new Vector2(projectile.position.X, projectile.position.Y - 6), // provides an offset to place in middle of path
-                            .15f,
+                            trailBigNodeScale,
                             true
                             );
                         _nodeQueue.Enqueue(node);
@@ -798,7 +883,7 @@ namespace ProjectilePlayground
             {
                 if (body.isStatic)
                 {
-                    body.Draw(gameTime, _spriteBatchUI); // dont scale floor
+                    body.Draw(gameTime, _spriteBatchCamera); // dont scale floor
                 }
                 else if (!(body.shapeType == ShapeType.Circle)) // dont draw projectiles
                     body.Draw(gameTime, _spriteBatchCamera);
@@ -811,7 +896,15 @@ namespace ProjectilePlayground
             if (isVisibleSliders)
                 foreach (var slider in _sliders)
                 {
-                    slider.Draw(gameTime, _spriteBatchUI);
+                    if (slider.isCannon)
+                    {
+                        slider.Draw(gameTime, _spriteBatchCamera);
+                    }
+                    else
+                    {
+                        slider.Draw(gameTime, _spriteBatchUI);
+                    }
+                        
                 }
 
             //foreach (var contact in _contacts)
@@ -824,8 +917,10 @@ namespace ProjectilePlayground
             if (isPaused)
                 menuButton.Draw(gameTime, _spriteBatchUI);
 
-            _spriteBatchUI.End();
+
             _spriteBatchCamera.End();
+            _spriteBatchUI.End();
+            
 
             
 

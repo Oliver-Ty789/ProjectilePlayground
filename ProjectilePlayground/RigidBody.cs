@@ -177,6 +177,7 @@ namespace ProjectilePlayground
                 Convert.ToSingle(linearDragCoefficient * 0.5 * environment.airPressure * area * MathF.Pow(linearVelocity.Y, 2)));
 
             resistiveAngularForce = Convert.ToSingle(0.5 * angularDragCoefficient * MathF.Pow(angularVelocity, 2) * environment.airPressure * area);
+
             
         }
         private void ApplyMagnus()
@@ -253,9 +254,9 @@ namespace ProjectilePlayground
 
                 linearVelocity += acceleration * delta; // as 60 ticks per second
                 if (angularVelocity > 0)
-                    angularVelocity -= resistiveAngularForce;
+                    angularVelocity -= resistiveAngularForce * delta;
                 else
-                    angularVelocity += resistiveAngularForce;
+                    angularVelocity += resistiveAngularForce * delta;
                 
             
 
@@ -291,7 +292,7 @@ namespace ProjectilePlayground
             base.Draw(gameTime, spriteBatch);
         }
 
-        public override void Update(GameTime gameTime, Environment environment)
+        public override void Update(GameTime gameTime, Environment environment, Camera2D camera)
         {
             float delta = (float)gameTime.ElapsedGameTime.TotalSeconds; // difference in time between frames, keeps velocity/acceleration consitent
 
@@ -316,7 +317,7 @@ namespace ProjectilePlayground
                 ApplyVelocity(delta);
             }
 
-            base.Update(gameTime, environment);
+            base.Update(gameTime, environment, camera);
         }
     }
 }

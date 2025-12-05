@@ -17,13 +17,18 @@ namespace ProjectilePlayground
         /// <summary>
         ///  the camera object is only ever in one spot, therefore its position is readonly,
         ///  and the only other attributes determine it's zoom qualities due to its abstracted use case
+        ///  
+        ///  the camInverseMatrix will be needed to be accessed anywhere to be applied to the mouse for ajusting 
+        ///  for collisions
         /// </summary>
 
         private readonly Vector2 position = new Vector2(0, 650);
         private float zoom = 1f;
-        private Matrix camScaleMatrix = Matrix.Identity;
         private Vector3 scaleVector3 = Vector3.Zero;
-        private bool IsScaling = false;
+        
+
+        private Matrix camMatrix = Matrix.Identity;
+        public Matrix camInverseMatrix = Matrix.Identity;
 
         public Camera2D()
         {
@@ -45,7 +50,7 @@ namespace ProjectilePlayground
             {
                 zoom = 2f;
             }
-            IsScaling = true;
+           
             Console.WriteLine($"zoom  {zoom}");
         }
 
@@ -55,26 +60,28 @@ namespace ProjectilePlayground
         }
         public Matrix GetCameraScaleMatrix()
         {
-            /// only need to return a Matrix if acutally tried to scale this tick
-            /// 
+            /// will always return the matrix to apply to all scalable sprite by 
+            /// making the camera's position the origin and scaling the objects
+            /// around it.
 
-            Matrix transform = Matrix.Identity;
-            if (IsScaling)
-            {
-                scaleVector3.X = zoom;
-                scaleVector3.Y = zoom;
-                scaleVector3.Z = 1f;
+            Matrix ScaleMatrix = Matrix.Identity;
+
+            
+            scaleVector3.X = zoom;
+            scaleVector3.Y = zoom;
+            scaleVector3.Z = 1f;
 
                
-                Matrix TranslateToCamera = Matrix.CreateTranslation(-position.X, -position.Y, 0f);
-                Matrix TranslateToWorld = Matrix.CreateTranslation(position.X, position.Y, 0f);
-                Matrix.CreateScale(ref scaleVector3, out camScaleMatrix);
-                
-                transform = TranslateToCamera * camScaleMatrix * TranslateToWorld;
-                
-            }
+            Matrix TranslateToCamera = Matrix.CreateTranslation(-position.X, -position.Y, 0f);
+            Matrix TranslateToWorld = Matrix.CreateTranslation(position.X, position.Y, 0f);
 
-            return transform;
+            Matrix.CreateScale(ref scaleVector3, out ScaleMatrix);
+                
+            camMatrix = TranslateToCamera * ScaleMatrix * TranslateToWorld;
+            camInverseMatrix = Matrix.Invert(camMatrix);
+           
+
+            return camMatrix;
 
         }
     }

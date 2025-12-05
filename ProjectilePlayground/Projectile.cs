@@ -57,7 +57,7 @@ namespace ProjectilePlayground
             base.Draw(gameTime, _spriteBatch);
         }
 
-        public override void Update(GameTime gameTime, Environment environment)
+        public override void Update(GameTime gameTime, Environment environment, Camera2D camera)
         {
             previousVelocity = body.linearVelocity;
             
@@ -65,10 +65,10 @@ namespace ProjectilePlayground
           
             foreach (var node in _nodes)
             {
-                node.Update(gameTime, environment);
+                node.Update(gameTime, environment, camera);
             }
 
-            base.Update(gameTime, environment);
+            base.Update(gameTime, environment, camera);
         }
     }
 }

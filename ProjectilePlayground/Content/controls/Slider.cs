@@ -292,7 +292,7 @@ namespace ProjectilePlayground.Content.controls
                 textBox.Draw(gameTime, spriteBatch);
         }
 
-        public override void Update(GameTime gameTime, Environment E)
+        public override void Update(GameTime gameTime, Environment E, Camera2D camera)
         {
 
             previousMouse = currentMouse;
@@ -300,7 +300,15 @@ namespace ProjectilePlayground.Content.controls
             previousKey = currentKey;
             currentKey = Keyboard.GetState();
 
-            var mouseRect = new VerticesRectangle(new Vector2(currentMouse.X, currentMouse.Y), 1, 1, 1);
+            Vector2 scaledOffset = new(currentMouse.X, currentMouse.Y);
+
+            if (isCannon)
+            {
+                
+                scaledOffset = Vector2.Transform(scaledOffset, camera.camInverseMatrix);
+            }
+
+            var mouseRect = new VerticesRectangle(scaledOffset, 1, 1, 1);
 
             //var mouseRect = new Rectangle(currentMouse.Position.X, currentMouse.Position.Y, 1, 1);
 
@@ -380,7 +388,7 @@ namespace ProjectilePlayground.Content.controls
             if (isTexting)
             {
                 
-                textBox.Update(gameTime, E);
+                textBox.Update(gameTime, E, camera);
                 HandleInput();
             }
             else
@@ -396,7 +404,7 @@ namespace ProjectilePlayground.Content.controls
             if (!isCannon)
                 CollisionRect = _collisionRect;
 
-            base.Update(gameTime, E);
+            base.Update(gameTime, E, camera);
         } 
     }
 }

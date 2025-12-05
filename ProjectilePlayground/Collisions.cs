@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -216,21 +217,23 @@ namespace ProjectilePlayground
             Vector2[] rAList = new Vector2[2];
             Vector2[] rBList = new Vector2[2];
 
-            if (!bodyA._collidingWith.Contains(bodyB) || !bodyB._collidingWith.Contains(bodyA)) // check to see if both bodies have already collided 
+            if (!bodyA._collidingWith.Contains(bodyB) && !bodyB._collidingWith.Contains(bodyA)) // check to see if both bodies have already collided 
             {
                 for (int i = 0; i < contactCount; i++)
                 {
                     Vector2 rA = contactList[i] - bodyA.position;
                     Vector2 rB = contactList[i] - bodyB.position;
 
-                    rAList[i] = rA;
-                    rBList[i] = rB;
+                    
 
                     Vector2 rAPerp = new Vector2(-rA.Y, rA.X);
                     Vector2 rBPerp = new Vector2(-rB.Y, rB.X);
 
-                    Vector2 rAPerpUnit = VectorMaths.UnitVector(rAPerp);
-                    Vector2 rBPerpUnit = VectorMaths.UnitVector(rBPerp);
+                    rAList[i] = rAPerp;
+                    rBList[i] = rBPerp;
+
+                    //Vector2 rAPerpUnit = VectorMaths.UnitVector(rAPerp);
+                    //Vector2 rBPerpUnit = VectorMaths.UnitVector(rBPerp);
 
                     Vector2 angularLinearVelocityA = rAPerp * bodyA.angularVelocity;
                     Vector2 angularLinearVelocityB = rBPerp * bodyB.angularVelocity;
@@ -239,29 +242,33 @@ namespace ProjectilePlayground
 
                     relativeVelocity = (bodyB.linearVelocity + angularLinearVelocityB) - (angularLinearVelocityA + bodyA.linearVelocity);
 
-                    float contactVelocityMag = VectorMaths.DotProduct(relativeVelocity, unitNormal);
+                    //relativeVelocity = (bodyB.linearVelocity) - bodyA.linearVelocity;
 
-                    if (contactVelocityMag > 0f) // collisions already being resolved
-                    {
-                        return;
-                    }
+                    float contactVelocityMag = VectorMaths.DotProduct(relativeVelocity,  normal);
 
-                    float rAPerpDotN = VectorMaths.DotProduct(rAPerpUnit, normal);
-                    float rBPerpDotN = VectorMaths.DotProduct(rBPerpUnit, normal);
+                    //if (contactVelocityMag > 0f) // collisions already being resolved
+                    //{
+                    //    return;
+                    //}
 
-                    float demon = bodyA.invMass + bodyB.invMass +
+                    float rAPerpDotN = VectorMaths.DotProduct(rAPerp, normal);
+                    float rBPerpDotN = VectorMaths.DotProduct(rBPerp, normal);
+
+                    float massDot = VectorMaths.DotProduct(normal, (bodyA.invMass + bodyB.invMass) * normal);
+
+                    float demon =  massDot +
                         rAPerpDotN * rAPerpDotN * bodyA.invInertia +
                         rBPerpDotN * rBPerpDotN * bodyB.invInertia;
 
 
 
                     j = -(1f + e) * contactVelocityMag;
-                    j /= demon;
-                    j /= contactCount;
+
+                    j /= contactCount * 1.5f;
 
                     
 
-                    Vector2 impulse = j * unitNormal;
+                    Vector2 impulse = j * normal;
                     impulseList[i] = impulse;
                 }
                 
@@ -274,11 +281,11 @@ namespace ProjectilePlayground
 
                     if (bodyB.shapeType != ShapeType.Circle)
                     {
-                        bodyB.angularVelocity -= VectorMaths.CrossProductArea(impulse, rBList[i]) * bodyB.invInertia;
+                        bodyB.angularVelocity += VectorMaths.DotProduct(impulse, rBList[i]) * bodyB.invInertia;
                     }
                     if (bodyA.shapeType != ShapeType.Circle)
                     {
-                        bodyA.angularVelocity += VectorMaths.CrossProductArea(impulse, rAList[i]) * bodyA.invInertia;
+                        bodyA.angularVelocity -= VectorMaths.DotProduct(impulse, rAList[i]) * bodyA.invInertia;
                     }
 
                    
@@ -288,7 +295,7 @@ namespace ProjectilePlayground
                 bodyB.isCollisionResolved = true;
 
                 bodyA._collidingWith.Add(bodyB);
-                bodyB._collidingWith.Add(bodyA);
+                //bodyB._collidingWith.Add(bodyA);
 
             }
 
@@ -311,14 +318,21 @@ namespace ProjectilePlayground
 
             j = -(1 + e) * VectorMaths.DotProduct(normal, relativeVelocity) / VectorMaths.DotProduct(normal, normal * ((1 / bodyA.mass) + (1 / bodyB.mass)));
 
-            if (!bodyA._collidingWith.Contains(bodyB) && !bodyB._collidingWith.Contains(bodyA)) // check to see if both bodies have already collided 
+            if (!bodyA._collidingWith.Contains(bodyB) && !bodyB._collidingWith.Contains(bodyA) ) // check to see if both bodies have already collided 
             {
+
+
+                bodyA._collidingWith.Clear();
+                bodyB._collidingWith.Clear();
                 
-                bodyA.linearVelocity -= (j / bodyA.mass) * normal;
-                bodyB.linearVelocity += (j / bodyB.mass) * normal;
+                bodyA.linearVelocity -= j * bodyA.invMass * normal;
+                bodyB.linearVelocity += j * bodyB.invMass * normal;
+
+               
 
                 bodyA.isCollisionResolved = true;
                 bodyB.isCollisionResolved = true;
+
 
                 bodyA._collidingWith.Add(bodyB);
                 bodyB._collidingWith.Add(bodyA);

@@ -51,7 +51,7 @@ namespace ProjectilePlayground.Content.controls
             }
         }
 
-        public override void Update(GameTime gameTime, Environment E)
+        public override void Update(GameTime gameTime, Environment E, Camera2D camera)
         {
             previousMouse = currentMouse;
             currentMouse = Mouse.GetState();
@@ -77,7 +77,7 @@ namespace ProjectilePlayground.Content.controls
                     Click?.Invoke(this, new EventArgs());
                 }
             }
-            base.Update(gameTime, E);
+            base.Update(gameTime, E, camera);
         }
 
 

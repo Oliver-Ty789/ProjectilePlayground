@@ -129,14 +129,14 @@ namespace ProjectilePlayground
 
 
 
-        public override void Update(GameTime gameTime, Environment environment)
+        public override void Update(GameTime gameTime, Environment environment, Camera2D camera)
         {
             if (isDragging)
             {
                 CannonOrientation();
             }
             
-            base.Update(gameTime, environment);
+            base.Update(gameTime, environment, camera);
         }
     }
 }

@@ -76,11 +76,15 @@ namespace ProjectilePlayground
                 base.Draw(gameTime, spriteBatch);
         }
 
-        public override void Update(Microsoft.Xna.Framework.GameTime gameTime, Environment environment)
+        public override void Update(Microsoft.Xna.Framework.GameTime gameTime, Environment environment, Camera2D camera)
         {
 
             currentMouse = Mouse.GetState();
-            var mouseRect = new VerticesRectangle(new Vector2(currentMouse.X, currentMouse.Y), 1, 1, 1);
+
+            Vector2 scaledOffset = new(currentMouse.X, currentMouse.Y);
+            scaledOffset = Vector2.Transform(scaledOffset, camera.camInverseMatrix);
+
+            var mouseRect = new VerticesRectangle(scaledOffset, 1, 1, 1);
 
             if (Collisions.IntersectingPolygons(mouseRect.vertices, CollisionRect.vertices, out Vector2 normal, out float depth))
             {
@@ -91,7 +95,7 @@ namespace ProjectilePlayground
                 isHovering = false;
             }
 
-                base.Update(gameTime, environment);
+                base.Update(gameTime, environment, camera);
         }
     }
 }

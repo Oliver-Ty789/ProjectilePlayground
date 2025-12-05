@@ -42,7 +42,14 @@ namespace ProjectilePlayground
 
         public static float CrossProductArea(Vector2 a, Vector2 b)
         {
-            return 0.5f * Length(a * b);
+            return Length(CrossProduct(a,b));
+        }
+
+        private static Vector2 CrossProduct(Vector2 a, Vector2 b)
+        {
+            
+            return new Vector2(a.X * b.Y, -(a.Y * b.X));
+
         }
 
         public static bool NearlyEqual(float a, float b) // due to floating point accuracies, this is better than using != for boolean expressions

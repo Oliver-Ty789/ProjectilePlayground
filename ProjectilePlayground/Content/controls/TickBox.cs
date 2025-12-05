@@ -37,9 +37,9 @@ namespace ProjectilePlayground.Content.controls
             }
         }
 
-        public override void Update(GameTime gameTime, Environment E)
+        public override void Update(GameTime gameTime, Environment E, Camera2D camera)
         {
-            base.Update(gameTime, E);
+            base.Update(gameTime, E, camera);
         }
     }
 }
