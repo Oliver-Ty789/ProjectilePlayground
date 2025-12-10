@@ -11,6 +11,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using ProjectilePlayground.Content.controls;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace ProjectilePlayground
 {
@@ -68,6 +69,9 @@ namespace ProjectilePlayground
         string presetName;
         ProjectileProperties projectileProperties;
 
+        bool IsCustom; // to toggle the drag coefficient sliders when custom projectile is selected
+        
+
 
         /// <summary>
         /// this is to mainatain trail node size for all different presets for their different image sizes
@@ -115,6 +119,8 @@ namespace ProjectilePlayground
 
             presetName = "basic";
             projectileProperties = new ProjectileProperties();
+            IsCustom = true;
+            
 
             Get_CsvData();
 
@@ -153,7 +159,7 @@ namespace ProjectilePlayground
 
             projectile = new Projectile(Content.Load<Texture2D>("sprites/"+projectileProperties.path), startPos, projectileProperties.scale, baseSpeed, projectileProperties.mass, baseAngle, projectileProperties.radius, projectileProperties.linearDragCoefficient, angularVelocity, projectileProperties.angularDragCoefficient, projectileProperties.coeffiecentOfResitution, isFrictionless);
             
-            pixelsPerM = projectile.ConversionToSI();
+            pixelsPerM = ConversionToSI();
 
             camera = new Camera2D();
 
@@ -271,7 +277,7 @@ namespace ProjectilePlayground
 
             var dragSlider = new Slider(
                 Content.Load<Texture2D>("sprites/scroller"),
-                new Vector2(950, 100),
+                new Vector2(950, 400),
                 1.25f,
                 Content.Load<SpriteFont>("fonts/font"),
                 Content.Load<Texture2D>("sprites/sliderbar"),
@@ -311,7 +317,7 @@ namespace ProjectilePlayground
 
             var angularSlider = new Slider(
                 Content.Load<Texture2D>("sprites/scroller"),
-                new Vector2(950, 400),
+                new Vector2(950, 100),
                 1.25f,
                 Content.Load<SpriteFont>("fonts/font"),
                 Content.Load<Texture2D>("sprites/sliderbar"),
@@ -469,7 +475,22 @@ namespace ProjectilePlayground
 
                 }
             }
-            Console.WriteLine(projectileProperties.name);
+            
+        }
+
+        
+        public float ConversionToSI()
+
+        // 1. find how many pixels in radius
+        // 2. find how many radius' make a meter
+        // 3. use that scale to find pixels to meter
+
+        {
+            var texture = Content.Load<Texture2D>("sprites/" + projectileProperties.path);
+            float radiusP = (texture.Width * projectileProperties.scale) / 2; // finds the radius of the projectile in pixels
+            float radiusPerMeter = 1 / projectileProperties.radius; // eg if radius = 0.5 therefore there would be 2 radius' per meter
+            float pixelsToMeter = radiusPerMeter * radiusP;
+            return pixelsToMeter;
         }
 
 
@@ -482,9 +503,8 @@ namespace ProjectilePlayground
             { 
                 case 0: // shoot button
                     _bodies.Remove(projectile.body);
-                    Get_CsvData();
+                    
                     projectile = new Projectile(Content.Load<Texture2D>("sprites/" + projectileProperties.path), startPos, projectileProperties.scale, initial_speed, projectileProperties.mass, initial_angle, projectileProperties.radius, projectileProperties.linearDragCoefficient, angularVelocity, projectileProperties.angularDragCoefficient, projectileProperties.coeffiecentOfResitution, isFrictionless);
-
 
                     queuing = true;
 
@@ -560,7 +580,7 @@ namespace ProjectilePlayground
                     _bodies.Add(testBody );
                     _bodies.Add(testBody2);
 
-                    camera.ResetZoom();
+                    
 
                     break;
                 case 2:
@@ -597,19 +617,62 @@ namespace ProjectilePlayground
                     break;
 
                 case 6: // tennis ball preset
-                    presetName = "tennis ball";                    
+                    _projectiles.Clear();
+                    _bodies.Remove(projectile.body);
+                    presetName = "tennis ball";
+                    Get_CsvData();
+                    IsCustom = false;
+                    pixelsPerM = ConversionToSI();
+                    Console.WriteLine("yosor");
+                    ResetAllSliders();
+                    initial_angle = baseAngle;
+                    initial_speed = baseSpeed * pixelsPerM;
+                    environment.gravity = new Vector2(0, baseGravity * pixelsPerM);
+                    angularVelocity = baseAngularVelocity;
                     break;
 
                 case 7: // custom ball preset
+                    _projectiles.Clear();
+                    _bodies.Remove(projectile.body);
                     presetName = "basic";
+                    Get_CsvData();
+                    IsCustom = true;
+                    pixelsPerM = ConversionToSI();
+                    ResetAllSliders();
+                    initial_angle = baseAngle;
+                    initial_speed = baseSpeed * pixelsPerM;
+                    environment.gravity = new Vector2(0, baseGravity * pixelsPerM);
+                    angularVelocity = baseAngularVelocity;
+                    projectileProperties.linearDragCoefficient = baselinearDragCoefficient;
+                    projectileProperties.angularDragCoefficient = baseAngularDragCoefficient;
                     break;
 
                 case 8: // beach ball preset
+                    _projectiles.Clear();
+                    _bodies.Remove(projectile.body);
                     presetName = "beach ball";
+                    Get_CsvData();
+                    IsCustom = false;
+                    pixelsPerM = ConversionToSI();
+                    ResetAllSliders();
+                    initial_angle = baseAngle;
+                    initial_speed = baseSpeed * pixelsPerM;
+                    environment.gravity = new Vector2(0, baseGravity * pixelsPerM);
+                    angularVelocity = baseAngularVelocity;
                     break;
 
                 case 9: // cannon ball preset
+                    _projectiles.Clear();
+                    _bodies.Remove(projectile.body);
                     presetName = "cannon ball";
+                    Get_CsvData();
+                    IsCustom = false;
+                    pixelsPerM = ConversionToSI();
+                    ResetAllSliders();
+                    initial_angle = baseAngle;
+                    initial_speed = baseSpeed * pixelsPerM;
+                    environment.gravity = new Vector2(0, baseGravity * pixelsPerM);
+                    angularVelocity = baseAngularVelocity;
                     break;
 
 
@@ -636,13 +699,15 @@ namespace ProjectilePlayground
                     environment.gravity = new Vector2(0 ,e.property * pixelsPerM);
                     break;
                 case 3:
-                    projectileProperties.linearDragCoefficient = e.property;
+                    if (IsCustom) // only reset these if the custom projectile being used
+                        projectileProperties.linearDragCoefficient = e.property;
                     break;
                 case 4:
                     angularVelocity = e.property;
                     break;
                 case 5:
-                    projectileProperties.angularDragCoefficient = e.property;
+                    if (IsCustom) // only reset these if the custom projectile being used
+                        projectileProperties.angularDragCoefficient = e.property;
                     break;
                 default:
                     break;
@@ -723,6 +788,8 @@ namespace ProjectilePlayground
             previousKeys = currentKeys;
             currentKeys = Keyboard.GetState();
 
+            //Console.WriteLine(projectile.body.linearVelocity.ToString());
+
             if (previousKeys.IsKeyDown(Keys.M) && currentKeys.IsKeyUp(Keys.M))
             {
                 if (isPaused)
@@ -762,7 +829,18 @@ namespace ProjectilePlayground
                 if (isVisibleSliders)
                     foreach (var slider in _sliders)
                     {
-                        slider.Update(gameTime, environment, camera);
+                        if (!IsCustom) // only update custom sliders if custom preset projectile is selected
+                        {
+                            if (!(slider.index == 5 || slider.index == 3))
+                            {
+                                slider.Update(gameTime, environment, camera);
+                            }
+                        }
+                        else
+                        {
+                            slider.Update(gameTime, environment, camera);
+                        }
+                        
                     }
 
 
@@ -794,8 +872,7 @@ namespace ProjectilePlayground
                                 if (contactCount == 2)
                                     _contacts.Add(contact2);
 
-                                Console.WriteLine(_bodies[i].shapeType);
-                                Console.WriteLine(_bodies[i]._collidingWith.Count);
+                               
                                 
                             }
                             else // if not collidingn with certain rigid body, remove from colliding list
@@ -811,7 +888,8 @@ namespace ProjectilePlayground
                             }
                             
                         }
-                        //Console.WriteLine(_bodies[i]._collidingWith.Count);
+                        
+
                     }
 
                     foreach (var projectile in _projectiles)
@@ -860,6 +938,8 @@ namespace ProjectilePlayground
                 }
                 if (isExit) Exit();
 
+                
+
                 base.Update(gameTime);
             }
         }
@@ -872,10 +952,18 @@ namespace ProjectilePlayground
                 GraphicsDevice.Clear(Color.LightSlateGray);
             // TODO: Add your drawing code here
 
+
+            /// summary 
+            /// the sprites drawn are broken down into two different sprite batches
+            /// 1. for UI elements not effected by the camera
+            /// 2. scalable elements that will be effected by the camera.
+            /// they need to be broken up to allow for the appropriate transformation matrix
+            /// to be applied to the correct sprites
+            
             _spriteBatchCamera.Begin(samplerState: SamplerState.LinearWrap, transformMatrix: camera.GetCameraScaleMatrix());
             _spriteBatchUI.Begin(samplerState: SamplerState.LinearWrap);
             
-            foreach (var projectile in _projectiles)
+            foreach (var projectile in _projectiles) // projectiles drawn here to keep the trail nodes
             {
                 projectile.Draw(gameTime, _spriteBatchCamera);
             }
@@ -902,16 +990,23 @@ namespace ProjectilePlayground
                     }
                     else
                     {
-                        slider.Draw(gameTime, _spriteBatchUI);
+                        if (!IsCustom) // only draw custom sliders if custom preset projectile is selected
+                        {
+                            if (!(slider.index  == 5 || slider.index == 3))
+                            {
+                                slider.Draw(gameTime, _spriteBatchUI);
+                            }
+                        }
+                        else
+                        {
+                            slider.Draw(gameTime, _spriteBatchUI);
+                        }
                     }
                         
                 }
 
-            //foreach (var contact in _contacts)
-            //{
-            //    Primitives2D.FillRectangle(_spriteBatch, contact.X - 10, contact.Y -10 , 20, 20, Color.Red, 0f);
-            //}
-            // clear contacts to not keep contacts that dont exit anymore
+            
+            // clear contacts to not keep contacts that dont exist anymore
             _contacts.Clear();
 
             if (isPaused)

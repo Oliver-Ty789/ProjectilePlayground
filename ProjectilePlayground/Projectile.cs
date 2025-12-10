@@ -30,16 +30,16 @@ namespace ProjectilePlayground
             _nodes = new List<TrailNode> { };
                
         }
-        
+
         public float ConversionToSI()
 
-            // 1. find how many pixels in radius
-            // 2. find how many radius' make a meter
-            // 3. use that scale to find pixels to meter
+        // 1. find how many pixels in radius
+        // 2. find how many radius' make a meter
+        // 3. use that scale to find pixels to meter
 
         {
-            float radiusP = (texture.Width * scale) /2; // finds the radius of the projectile in pixels
-            float radiusPerMeter = 1/radius; // eg if radius = 0.5 therefore there would be 2 radius' per meter
+            float radiusP = (texture.Width * scale) / 2; // finds the radius of the projectile in pixels
+            float radiusPerMeter = 1 / radius; // eg if radius = 0.5 therefore there would be 2 radius' per meter
             float pixelsToMeter = radiusPerMeter * radiusP;
             return pixelsToMeter;
         }

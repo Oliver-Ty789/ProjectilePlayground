@@ -1,5 +1,5 @@
 Name,path,radius (m),mass (kg),linear resistance coefficient,angular resistance coefficient,coeffiecent of resitution ,scale
-basic,Final_face_circle,0.5,2,0,0,0.5,0.25
-tennis ball,tennisBall,0.034,0.0056,0.002,2,0.85,0.015
+basic,Final_face_circle,0.25,2,0,0,0.5,0.25
+tennis ball,tennisBall,0.034,0.0056,0.002,2,0.75,0.01
 beach ball,beachBall,0.3,0.1,0.002,2,0.25,0.15
-cannon ball,cannonBall,0.1,19,0.0025,0.001,0.2,0.05
+cannon ball,cannonBall,0.1,19,0.0025,0.001,0.2,0.03
