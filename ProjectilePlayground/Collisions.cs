@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Dynamic;
 using System.Linq;
+using System.Runtime.Intrinsics.Arm;
+using CsvHelper.Configuration.Attributes;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -8,9 +11,9 @@ namespace ProjectilePlayground
 {
     internal static class Collisions 
     {
-        public static bool IntersectingPolygons(Vector2[] verticesA, Vector2[] verticesB, out Vector2 normal, out float depth) // finds egde and normal to see if polygons overlap in an axis
+        public static bool IntersectingPolygons(Vector2 centerA,Vector2[] verticesA, Vector2 centerB, Vector2[] verticesB, out Vector2 normal, out float depth) // finds egde and normal to see if polygons overlap in an axis
         {
-            normal = Vector2.Zero;
+            normal = Vector2.Zero; // direction to push the second object out of the first object
             depth = float.MaxValue;
             for (int i = 0; i< verticesA.Length; i++)
             {
@@ -18,7 +21,7 @@ namespace ProjectilePlayground
                 Vector2 vb = verticesA[(i + 1) % verticesA.Length];
 
                 Vector2 edge = va - vb;
-                Vector2 axis = new Vector2(-edge.Y, edge.X); // finds the perpendicular vector to chosen edge
+                Vector2 axis = VectorMaths.UnitVector(new(-edge.Y, edge.X)); // finds the perpendicular vector to chosen edge
 
                 ProjectVertices(verticesA, axis, out float minA, out float maxA);
                 ProjectVertices(verticesB, axis, out float minB, out float maxB);
@@ -30,6 +33,7 @@ namespace ProjectilePlayground
                 }
 
                 float axisDepth = MathF.Min(maxB - minA, maxA - minB); // to return perpendicular normal to both polygons
+                
                 if (axisDepth < depth)
                 {
                     normal = axis;
@@ -43,7 +47,7 @@ namespace ProjectilePlayground
                 Vector2 vb = verticesB[(i + 1) % verticesB.Length];
 
                 Vector2 edge = va - vb;
-                Vector2 axis = new Vector2(-edge.Y, edge.X); // finds the perpendicular vector to chosen edge
+                Vector2 axis = VectorMaths.UnitVector(new (-edge.Y, edge.X)); // finds the perpendicular vector to chosen edge
 
                 ProjectVertices(verticesA, axis, out float minA, out float maxA);
                 ProjectVertices(verticesB, axis, out float minB, out float maxB);
@@ -54,24 +58,61 @@ namespace ProjectilePlayground
                 }
 
                 float axisDepth = MathF.Min(maxB - minA, maxA - minB);
+                
                 if (axisDepth < depth)
                 {
                     normal = axis;
                     depth = axisDepth;
                 }
             }
+
+            // normal is pointing in the right direction
+
+           
+            
+            
+
+            Vector2 centerA2 = GetArithmeticMeanPos(verticesA);
+            Vector2 centerB2 = GetArithmeticMeanPos(verticesB);
+
+            Vector2 direction = centerB2 - centerA2;
+
+            // if in the wrong direction, flip the normal
+            if (VectorMaths.DotProduct(direction, normal)  < 0)
+            {
+                normal = -normal;
+            }
+
+            
+
             return true;
         }
 
-        private static void ProjectVertices(Vector2[] vertices, Vector2 normal, out float min, out float max)
+        private static Vector2 GetArithmeticMeanPos(Vector2[] vertices)
+        {
+            float sumX = 0f;
+            float sumY = 0f;
+
+            for (int i = 0 ; i<vertices.Length; i++)
+            {
+                sumX += vertices[i].X;
+                sumY += vertices[i].Y;
+            }
+            return new (sumX / (float)vertices.Length, sumY / (float)vertices.Length);
+        }
+
+        private static void ProjectVertices(Vector2[] vertices, Vector2 axis, out float min, out float max)
         {
             min = float.MaxValue;
             max = float.MinValue;
 
+            
+
             for (int i = 0;i < vertices.Length;i++)
             {
                 Vector2 v = vertices[i];
-                float projection = VectorMaths.DotProduct(v, normal);
+
+                float projection = VectorMaths.DotProduct(v, axis);
 
                 if (projection < min)
                 {
@@ -181,7 +222,7 @@ namespace ProjectilePlayground
 
             float edgeDist = VectorMaths.Length(edge) * VectorMaths.Length(edge); // compensate for increase of dot products dependent on distance
 
-            if (outOfBounds < 0 || edgeDist < outOfBounds)
+            if (outOfBounds < 0 || edgeDist < outOfBounds || VectorMaths.NearlyEqual(outOfBounds, 0f) || VectorMaths.NearlyEqual(outOfBounds, edgeDist))
             {     /// this is done to see if the point is parallel with an infinite edge but beyond the bounds of the actual edge
 
                 distSq = float.MaxValue;
@@ -217,39 +258,43 @@ namespace ProjectilePlayground
             Vector2[] rAList = new Vector2[2];
             Vector2[] rBList = new Vector2[2];
 
-            if (!bodyA._collidingWith.Contains(bodyB) && !bodyB._collidingWith.Contains(bodyA)) // check to see if both bodies have already collided 
-            {
+            Vector2 centerA = GetArithmeticMeanPos(bodyA.CollisionRect.vertices);
+            Vector2 centerB = GetArithmeticMeanPos(bodyB.CollisionRect.vertices);
+
+           
                 for (int i = 0; i < contactCount; i++)
                 {
-                    Vector2 rA = contactList[i] - bodyA.position;
-                    Vector2 rB = contactList[i] - bodyB.position;
+                    
+                
+                
+                    Vector2 rA = contactList[i] - centerA;
+                    Vector2 rB = contactList[i] - centerB;
 
                     
 
-                    Vector2 rAPerp = new Vector2(-rA.Y, rA.X);
-                    Vector2 rBPerp = new Vector2(-rB.Y, rB.X);
+                    Vector2 rAPerp = new (-rA.Y, rA.X);
+                    Vector2 rBPerp = new(-rB.Y, rB.X);
 
-                    rAList[i] = rAPerp;
-                    rBList[i] = rBPerp;
+                    rAList[i] = rA;
+                    rBList[i] = rB;
 
-                    //Vector2 rAPerpUnit = VectorMaths.UnitVector(rAPerp);
-                    //Vector2 rBPerpUnit = VectorMaths.UnitVector(rBPerp);
+                    
 
                     Vector2 angularLinearVelocityA = rAPerp * bodyA.angularVelocity;
                     Vector2 angularLinearVelocityB = rBPerp * bodyB.angularVelocity;
 
-                    Vector2 unitNormal = VectorMaths.UnitVector(normal);
+                   
 
                     relativeVelocity = (bodyB.linearVelocity + angularLinearVelocityB) - (angularLinearVelocityA + bodyA.linearVelocity);
 
-                    //relativeVelocity = (bodyB.linearVelocity) - bodyA.linearVelocity;
+                    
 
                     float contactVelocityMag = VectorMaths.DotProduct(relativeVelocity,  normal);
 
-                    //if (contactVelocityMag > 0f) // collisions already being resolved
-                    //{
-                    //    return;
-                    //}
+                    if (contactVelocityMag > 0f) // collisions already being resolved
+                    {
+                        return;
+                    }
 
                     float rAPerpDotN = VectorMaths.DotProduct(rAPerp, normal);
                     float rBPerpDotN = VectorMaths.DotProduct(rBPerp, normal);
@@ -264,11 +309,14 @@ namespace ProjectilePlayground
 
                     j = -(1f + e) * contactVelocityMag;
 
-                    j /= contactCount * 1.5f;
+                    j /= demon;
+                    
+                    j /= contactCount;
 
                     
 
                     Vector2 impulse = j * normal;
+                   
                     impulseList[i] = impulse;
                 }
                 
@@ -279,152 +327,104 @@ namespace ProjectilePlayground
                     bodyA.linearVelocity += -impulse * bodyA.invMass;
                     bodyB.linearVelocity += impulse * bodyB.invMass;
 
-                    if (bodyB.shapeType != ShapeType.Circle)
-                    {
-                        bodyB.angularVelocity += VectorMaths.DotProduct(impulse, rBList[i]) * bodyB.invInertia;
-                    }
-                    if (bodyA.shapeType != ShapeType.Circle)
-                    {
-                        bodyA.angularVelocity -= VectorMaths.DotProduct(impulse, rAList[i]) * bodyA.invInertia;
-                    }
+                    
+
+                    if (!(bodyB.shapeType == ShapeType.Circle))
+                        bodyB.angularVelocity -= VectorMaths.CrossProductArea(impulse, rBList[i]) * bodyB.invInertia;
+
+                    if (!(bodyA.shapeType == ShapeType.Circle))
+                        bodyA.angularVelocity += VectorMaths.CrossProductArea(impulse, rAList[i]) * bodyA.invInertia;
+                    
 
                    
 
                 }
-                bodyA.isCollisionResolved = true;
-                bodyB.isCollisionResolved = true;
+            bodyA.collisionCount += 1;
+            bodyB.collisionCount += 1;
 
-                bodyA._collidingWith.Add(bodyB);
-                //bodyB._collidingWith.Add(bodyA);
-
+            if (bodyA.collisionCount == 2)
+            {
+                bodyA.isTrail = false;
             }
 
-            return;
+            if (bodyB.collisionCount == 2)
+            {
+                bodyB.isTrail = false;
+
+            }
+             return;
 
                
         }
-        public static void ResolveCollisionsBasic(RigidBody bodyA, RigidBody bodyB, Vector2 normal, Environment environment, Vector2 contact1, Vector2 contact2, int contactCount)
+        public static void ResolveCollisionsBasic(RigidBody bodyA, RigidBody bodyB, Vector2 normal, Environment environment, Vector2 contact1, Vector2 contact2, int contactCount, float depth)
         {
-            var relativeVelocity = bodyB.linearVelocity - bodyA.linearVelocity;
+            var relativeVelocity =  bodyB.linearVelocity - bodyA.linearVelocity;
             
             var j = 0f; // scalar quantity for impulse
 
             var e = MathF.Min(bodyA.restitution, bodyB.restitution);
 
-            //if (VectorMaths.DotProduct(relativeVelocity, normal) > 0f)
-            //{
-            //    return;
-            //}
-
-            j = -(1 + e) * VectorMaths.DotProduct(normal, relativeVelocity) / VectorMaths.DotProduct(normal, normal * ((1 / bodyA.mass) + (1 / bodyB.mass)));
-
-            if (!bodyA._collidingWith.Contains(bodyB) && !bodyB._collidingWith.Contains(bodyA) ) // check to see if both bodies have already collided 
+            if (VectorMaths.DotProduct(relativeVelocity, normal) > 0) // collisions already resolved
             {
-
-
-                bodyA._collidingWith.Clear();
-                bodyB._collidingWith.Clear();
-                
-                bodyA.linearVelocity -= j * bodyA.invMass * normal;
-                bodyB.linearVelocity += j * bodyB.invMass * normal;
-
-               
-
-                bodyA.isCollisionResolved = true;
-                bodyB.isCollisionResolved = true;
-
-
-                bodyA._collidingWith.Add(bodyB);
-                bodyB._collidingWith.Add(bodyA);
-
                 return;
             }
 
+           
+
+            var numerator = -(1 + e) * VectorMaths.DotProduct(normal, relativeVelocity);
+            var denomExtension = normal * ((1 / bodyA.mass) + (1 / bodyB.mass));
+            var denom = VectorMaths.DotProduct(normal, denomExtension);
+
+            j = numerator / denom;
+
+
+            bodyA.collisionCount += 1;
+            bodyB.collisionCount += 1;
+
+            if (bodyA.collisionCount == 2)
+            {
+                bodyA.isTrail = false;
+            }
+
+            if (bodyB.collisionCount == 2)
+            {
+                bodyB.isTrail = false;
+            }
+
+            bodyA.linearVelocity -= j * bodyA.invMass * normal;
+            bodyB.linearVelocity += j * bodyB.invMass * normal;
+
+
             
 
-            // resolve angular collisions
-
-            //if (contactCount == 1) // only one contact point
-            //{
-            //    Vector2 rA = contact1 - bodyA.CollisionRect.Center;
-            //    Vector2 rB = contact1 - bodyB.CollisionRect.Center;
-
-            //    Vector2 rAPerp = new Vector2(- rA.Y, rA.X);
-            //    Vector2 rBPerp = new Vector2(- rB.Y, rB.X);
-
-            //    j = -(1 + e) * VectorMaths.DotProduct(relativeVelocity, normal) / VectorMaths.DotProduct(normal, normal * (1 / bodyA.mass + 1 / bodyB.mass)) + MathF.Pow(VectorMaths.DotProduct(rAPerp, normal), 2) / bodyA.rotationalInertia + MathF.Pow(VectorMaths.DotProduct(rBPerp, normal), 2) / bodyB.rotationalInertia;
-
-            //    bodyA.angularVelocity += VectorMaths.DotProduct(rAPerp, j * normal) / bodyA.rotationalInertia;
-            //    bodyB.angularVelocity += VectorMaths.DotProduct(rBPerp, j * normal) / bodyB.rotationalInertia;
-            //}
-            //else // 2 contact points trying to just do it twice, find average between distance
-            //{
-            //    var contactAv = new Vector2((contact1.X + contact2.X) / 2, (contact1.Y + contact2.Y) / 2);
-
-            //    Vector2 rA = contactAv - bodyA.CollisionRect.Center;
-            //    Vector2 rB = contactAv - bodyB.CollisionRect.Center;
-
-            //    Vector2 rAPerp = new Vector2(-rA.Y, rA.X);
-            //    Vector2 rBPerp = new Vector2(-rB.Y, rB.X);
-
-            //    j = -(1 + e) * VectorMaths.DotProduct(relativeVelocity, normal) / VectorMaths.DotProduct(normal, normal * (1 / bodyA.mass + 1 / bodyB.mass)) + MathF.Pow(VectorMaths.DotProduct(rAPerp, normal), 2) / bodyA.rotationalInertia + MathF.Pow(VectorMaths.DotProduct(rBPerp, normal), 2) / bodyB.rotationalInertia;
-            //    //Console.WriteLine(VectorMaths.DotProduct(rAPerp, j * VectorMaths.UnitVector(normal)) / (bodyA.rotationalInertia * 100000));
-
-            //    bodyA.angularVelocity += (VectorMaths.DotProduct(rAPerp, j * VectorMaths.UnitVector(normal)) / bodyA.rotationalInertia) * MathHelper.Pi/180;
-            //    //bodyB.angularVelocity += VectorMaths.DotProduct(rBPerp, j * VectorMaths.UnitVector(normal)) / (bodyB.rotationalInertia );
+            
 
 
+            if (!bodyA.isFrictionless)
+            {
+                
+                
+                // static friction
+                
 
+                Vector2 frictionNormalA = normal * (environment.gravity * bodyA.mass * MathF.Cos(bodyA.rotation)); // find mag and direction of friction normal
+                Vector2 frictionParallelA = new Vector2(-frictionNormalA.Y, frictionNormalA.X); // make direction parallel to contact surfaces
+                bodyA.staticFriction = frictionParallelA * bodyA.staticFrictionCoefficient;
 
+                Vector2 frictionNormalB = normal * (environment.gravity * bodyB.mass * MathF.Cos(bodyB.rotation)); // find mag and direction of friction normal
+                Vector2 frictionParallelB = new Vector2(-frictionNormalB.Y, frictionNormalB.X);
+                bodyB.staticFriction = (frictionParallelB * bodyB.staticFrictionCoefficient);
 
-            //    //Vector2 rA = contact1 - bodyA.CollisionRect.Center;
-            //    //Vector2 rB = contact1 - bodyB.CollisionRect.Center;
+                // dynamic friction
+                // need to be opposite to linear velocity
+                Vector2 unitOppositeLinearVelocityA = new Vector2(-1, -1) * VectorMaths.UnitVector(bodyA.linearVelocity);
+                Vector2 unitOppositeLinearVelcoityB = new Vector2(-1, -1) * VectorMaths.UnitVector(bodyB.linearVelocity);
 
-            //    //Vector2 rAPerp = new Vector2(-rA.Y, rA.X);
-            //    //Vector2 rBPerp = new Vector2(-rB.Y, rB.X);
+                bodyA.dynamicFriction = frictionParallelA * bodyA.dynamicFrictionCoefficient * unitOppositeLinearVelocityA;
+                bodyB.dynamicFriction = frictionParallelB * bodyB.dynamicFrictionCoefficient * unitOppositeLinearVelcoityB;
+            }
 
-            //    //j = -(1 + e) * VectorMaths.DotProduct(relativeVelocity, normal) / VectorMaths.DotProduct(normal, normal * (1 / bodyA.mass + 1 / bodyB.mass)) + MathF.Pow(VectorMaths.DotProduct(rAPerp, normal), 2) / bodyA.rotationalInertia + MathF.Pow(VectorMaths.DotProduct(rBPerp, normal), 2) / bodyB.rotationalInertia;
-
-            //    //bodyA.angularVelocity += VectorMaths.DotProduct(rAPerp, j * normal) / bodyA.rotationalInertia;
-            //    ////bodyB.angularVelocity += VectorMaths.DotProduct(rBPerp, j * normal) / bodyB.rotationalInertia;
-
-            //    //rA = contact2 - bodyA.CollisionRect.Center;
-            //    //rB = contact2 - bodyB.CollisionRect.Center;
-
-            //    //rAPerp = new Vector2(-rA.Y, rA.X);
-            //    //rBPerp = new Vector2(-rB.Y, rB.X);
-
-            //    //j = -(1 + e) * VectorMaths.DotProduct(relativeVelocity, normal) / VectorMaths.DotProduct(normal, normal * (1 / bodyA.mass + 1 / bodyB.mass)) + MathF.Pow(VectorMaths.DotProduct(rAPerp, normal), 2) / bodyA.rotationalInertia + MathF.Pow(VectorMaths.DotProduct(rBPerp, normal), 2) / bodyB.rotationalInertia;
-
-            //    //bodyA.angularVelocity += VectorMaths.DotProduct(rAPerp, j * normal) / bodyA.rotationalInertia;
-            //    ////bodyB.angularVelocity += VectorMaths.DotProduct(rBPerp, j * normal) / bodyB.rotationalInertia;
-            //}
-
-
-
-
-
-
-            // always just apply friction to body
-
-            // static friction
-            Vector2 unitNormal = VectorMaths.UnitVector(normal); // find direction of normal
-
-            Vector2 frictionNormalA = unitNormal * (environment.gravity * bodyA.mass * MathF.Cos(bodyA.rotation)); // find mag and direction of friction normal
-            Vector2 frictionParallelA = new Vector2(-frictionNormalA.Y, frictionNormalA.X); // make direction parallel to contact surfaces
-            bodyA.staticFriction = frictionParallelA * bodyA.staticFrictionCoefficient ;
- 
-            Vector2 frictionNormalB = unitNormal * (environment.gravity * bodyB.mass * MathF.Cos(bodyB.rotation)); // find mag and direction of friction normal
-            Vector2 frictionParallelB = new Vector2(-frictionNormalB.Y, frictionNormalB.X);
-            bodyB.staticFriction = (frictionParallelB * bodyB.staticFrictionCoefficient) ;
-
-            // dynamic friction
-            // need to be opposite to linear velocity
-            Vector2 unitOppositeLinearVelocityA = new Vector2(-1,-1) * VectorMaths.UnitVector(bodyA.linearVelocity);
-            Vector2 unitOppositeLinearVelcoityB = new Vector2(-1,-1) * VectorMaths.UnitVector(bodyB.linearVelocity);
-
-            bodyA.dynamicFriction = frictionParallelA * bodyA.dynamicFrictionCoefficient * unitOppositeLinearVelocityA;
-            bodyB.dynamicFriction = frictionParallelB * bodyB.dynamicFrictionCoefficient * unitOppositeLinearVelcoityB;
+            
         }
 
 

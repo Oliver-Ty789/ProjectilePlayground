@@ -21,9 +21,9 @@ namespace ProjectilePlayground.Content.controls
             CollisionRect = _collisionRect;
         }
 
-        public override void Draw(GameTime gameTime, SpriteBatch spriteBatch)
+        public override void Draw(GameTime gameTime, SpriteBatch spriteBatch, SpriteBatch camera)
         {
-            base.Draw(gameTime, spriteBatch);
+            
             if (isTicked)
             {
                 spriteBatch.Draw(tickTexture, DrawingRect, colour);
@@ -35,6 +35,7 @@ namespace ProjectilePlayground.Content.controls
 
                 spriteBatch.DrawString(font, text, new Vector2(x, y), penColour);
             }
+            base.Draw(gameTime, spriteBatch, camera);
         }
 
         public override void Update(GameTime gameTime, Environment E, Camera2D camera)

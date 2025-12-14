@@ -20,7 +20,8 @@ namespace ProjectilePlayground.Content.controls
         public SpriteFont font;
         public bool isTicked;
         public event EventHandler Click;
-        public bool isClicked { get; private set; }
+        public bool isClicked;
+       
         public Color penColour { get; set; }
         public string text { get; set; }
         public int index { get; set; }
@@ -32,8 +33,10 @@ namespace ProjectilePlayground.Content.controls
             this.index = index;
             _collisionRect = new VerticesRectangle(position, texture.Width, texture.Height, scale);
             CollisionRect = _collisionRect;
+            isClicked = false;
+
         }
-        public override void Draw(GameTime gameTime ,SpriteBatch spriteBatch)
+        public virtual void Draw(GameTime gameTime ,SpriteBatch spriteBatch, SpriteBatch spritebatchCamera)
         {
             colour = Color.White;
 
@@ -60,14 +63,24 @@ namespace ProjectilePlayground.Content.controls
 
             isHovering = false;
 
-            // checking if mouse is hovering and or clicking the button
+            
+            if (isClicked)
+            {
+                if ((currentMouse.LeftButton == ButtonState.Released) && (previousMouse.LeftButton == ButtonState.Pressed))
+                {
+                    // call place new target body subroutine in game1
+                    Click?.Invoke(this, new EventArgs());
+                }
+            }
 
-            if (Collisions.IntersectingPolygons(mouseRect.vertices, CollisionRect.vertices, out Vector2 normal, out float depth))
+            // checking if mouse is hovering and or clicking the button
+            if (Collisions.IntersectingPolygons(mouseRect.Center ,mouseRect.vertices, CollisionRect.Center, CollisionRect.vertices, out Vector2 normal, out float depth))
             {
                 isHovering = true;
 
                 if ((currentMouse.LeftButton == ButtonState.Released) && (previousMouse.LeftButton == ButtonState.Pressed))
                 {
+                    
                     if (index == 2 || index == 3)
                         if (isTicked)   
                             isTicked = false;
@@ -77,6 +90,8 @@ namespace ProjectilePlayground.Content.controls
                     Click?.Invoke(this, new EventArgs());
                 }
             }
+
+            
             base.Update(gameTime, E, camera);
         }
 

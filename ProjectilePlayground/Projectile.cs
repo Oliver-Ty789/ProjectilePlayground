@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -8,11 +9,14 @@ namespace ProjectilePlayground
     sealed class Projectile : ScaledSprite
     {
        
+        // public
         public Vector2 initialVelocity;
         public float radius;
         public Vector2 previousVelocity;
         public List<TrailNode> _nodes;
         public RigidBody body;
+        
+        
 
         // private
         private VerticesRectangle _collisionRect;
@@ -21,6 +25,7 @@ namespace ProjectilePlayground
         public Projectile(Texture2D texture, Vector2 position, float scale, float initial_s, float mass, float initial_a, float radius, float linearDragCoefficient, float angularVelocity, float angularDragCoefficient, float restitution, bool isFrictionless) : base (texture, position, scale)
         {
             this.radius = radius;
+             
             _collisionRect = new VerticesRectangle(position, texture.Width, texture.Height, scale);
             CollisionRect = _collisionRect;
             initialVelocity = VectorMaths.ToVector2(initial_s, initial_a);
@@ -48,12 +53,18 @@ namespace ProjectilePlayground
         {
             body.Draw(gameTime, _spriteBatch);
 
-            foreach (var node in _nodes)
+            try
             {
-                node.Draw(gameTime, _spriteBatch);
+                foreach (var node in _nodes)
+                {
+                    node.Draw(gameTime, _spriteBatch);
+                }
             }
-            
 
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
             base.Draw(gameTime, _spriteBatch);
         }
 
@@ -62,10 +73,18 @@ namespace ProjectilePlayground
             previousVelocity = body.linearVelocity;
             
             position = body.position;
-          
-            foreach (var node in _nodes)
+
+            try
             {
-                node.Update(gameTime, environment, camera);
+                foreach (var node in _nodes)
+                {
+                    node.Update(gameTime, environment, camera);
+                }
+            }
+
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
             }
 
             base.Update(gameTime, environment, camera);

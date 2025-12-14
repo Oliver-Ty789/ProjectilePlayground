@@ -56,6 +56,10 @@ namespace ProjectilePlayground
 
         public readonly ShapeType shapeType;
 
+        // for getting rid of the trail after collisionCount >= 2
+        public bool isTrail { get; set; }
+        public int collisionCount { get; set; }
+
         // private
         private Vector2 resistiveLinearForce;
         private float resistiveAngularForce;
@@ -116,7 +120,8 @@ namespace ProjectilePlayground
                 this.invMass = 0f;
             }
 
-
+            isTrail = true;
+            collisionCount = 0;
             
         }
 
@@ -143,12 +148,23 @@ namespace ProjectilePlayground
             }
             else
             {
-                float widthM = CollisionRect.Width ;
+                float widthM = CollisionRect.Width;
                 float heightM = CollisionRect.Height ;
                 return (1f/12f) * mass * (widthM * widthM  + heightM * heightM);
             }
         }
 
+
+        public void Move(Vector2 amount) // making sure boides are not inside of eachother
+        {
+            if (isStatic) 
+            {
+                return;
+            }
+            position += amount;
+            _collisionRect = VerticesRectangle.GetTransformedRectangle(CollisionRect, 0f, amount, CollisionRect.Center + position, 1f);
+            CollisionRect = _collisionRect;
+        }
 
         private void ApplyVelocity(float delta)
         {
@@ -157,6 +173,7 @@ namespace ProjectilePlayground
             CollisionRect = _collisionRect;
             rotation += angularVelocity * delta;
             var changeInRotation = angularVelocity * delta;
+          
            
 
             // apply to collision rect
@@ -234,9 +251,13 @@ namespace ProjectilePlayground
 
         private void ApplyForces(Environment environment, float delta)
         {
+            resultantForce = Vector2.Zero;
+
+
+            
             // gravity
 
-            resultantForce = environment.gravity * mass;
+            resultantForce += environment.gravity * mass;
 
 
             // drag
@@ -248,29 +269,20 @@ namespace ProjectilePlayground
 
 
 
-            if (!(linearVelocity == new Vector2(0, 0)))
-            {
-                previousLinearVelocity = linearVelocity;
-                // F = ma
-                var acceleration = new Vector2(resultantForce.X / mass, resultantForce.Y / mass);
+           
+            previousLinearVelocity = linearVelocity;
+            // F = ma
+            Vector2 acceleration = new (resultantForce.X / mass, resultantForce.Y / mass);
 
-                linearVelocity += acceleration * delta; // as 60 ticks per second
-                if (angularVelocity > 0)
-                    angularVelocity -= resistiveAngularForce * delta;
-                else
-                    angularVelocity += resistiveAngularForce * delta;
+            linearVelocity += acceleration * delta; // as 60 ticks per second
+            if (angularVelocity > 0)
+                angularVelocity -= resistiveAngularForce * delta;
+            else
+                angularVelocity += resistiveAngularForce * delta;
                 
             
 
-            }
-            else
-            {
-                linearVelocity = new Vector2(0, 0);
-                resistiveLinearForce = new Vector2(0, 0);
-                magnusForce = new Vector2(0, 0);
-                resultantForce = new Vector2(0, 0);
-                position.Y = initialPos.Y;
-            }
+           
         }
         
         //public static void HandleCollisions(RigidBody body1, RigidBody body2, out RigidBody bodya, out RigidBody bodyb) // called from main
@@ -283,10 +295,10 @@ namespace ProjectilePlayground
         {
             var pivot = new Vector2(SourceRect.Width / 2f, SourceRect.Height / 2f);
             spriteBatch.Draw(texture, DrawingRect, SourceRect, Color.White, rotation, pivot, SpriteEffects.None, 0f);
-            
+
             for (int i = 0; i < 4; i++)
             {
-                Primitives2D.DrawLine(spriteBatch, CollisionRect.vertices[i], CollisionRect.vertices[(i+1)%4], Color.White);
+                Primitives2D.DrawLine(spriteBatch, CollisionRect.vertices[i], CollisionRect.vertices[(i + 1) % 4], Color.White);
             }
 
             //Primitives2D.FillRectangle(spriteBatch, CollisionRect.Center.X + position.X, CollisionRect.Center.X + position.Y , 10, 10, Color.White);
@@ -298,26 +310,22 @@ namespace ProjectilePlayground
         {
             float delta = (float)gameTime.ElapsedGameTime.TotalSeconds; // difference in time between frames, keeps velocity/acceleration consitent
 
-            if (!isStatic) // only apply physics to non-static bodies and not while impulse is being applied
+            
+            if (!isStatic)
             {
-                if (!isCollisionResolved)
-                {
-                    ApplyDrag(environment);
-                    ApplyMagnus();
-                    ApplyForces(environment, delta);
-                }
-                else
-                {
-                    if (!isFrictionless)
-                    {
-                        ApplyFriction(environment, delta);
-                    }
-                   
+                ApplyDrag(environment);
+                ApplyMagnus();
+                ApplyForces(environment, delta);
 
+                if (!isFrictionless)
+                {
+                    ApplyFriction(environment, delta);
                 }
-                
+
                 ApplyVelocity(delta);
             }
+            
+            
 
             base.Update(gameTime, environment, camera);
         }

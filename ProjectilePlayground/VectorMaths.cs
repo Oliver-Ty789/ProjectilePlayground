@@ -42,13 +42,13 @@ namespace ProjectilePlayground
 
         public static float CrossProductArea(Vector2 a, Vector2 b)
         {
-            return Length(CrossProduct(a,b));
+            return a.X * b.Y - b.X * a.Y;
         }
 
         private static Vector2 CrossProduct(Vector2 a, Vector2 b)
         {
             
-            return new Vector2(a.X * b.Y, -(a.Y * b.X));
+            return new (a.X * b.Y, -(a.Y * b.X));
 
         }
 

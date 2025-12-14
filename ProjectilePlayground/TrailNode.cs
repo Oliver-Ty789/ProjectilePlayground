@@ -86,7 +86,7 @@ namespace ProjectilePlayground
 
             var mouseRect = new VerticesRectangle(scaledOffset, 1, 1, 1);
 
-            if (Collisions.IntersectingPolygons(mouseRect.vertices, CollisionRect.vertices, out Vector2 normal, out float depth))
+            if (Collisions.IntersectingPolygons(mouseRect.Center, mouseRect.vertices, CollisionRect.Center, CollisionRect.vertices, out Vector2 normal, out float depth))
             {
                 isHovering = true;
             }
