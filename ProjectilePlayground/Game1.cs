@@ -96,6 +96,8 @@ namespace ProjectilePlayground
         float baselinearDragCoefficient;
         float baseAngularVelocity;
         float baseAngularDragCoefficient;
+        float baseMass;
+        float baseRadius;
 
         // global values
 
@@ -135,12 +137,14 @@ namespace ProjectilePlayground
 
 
             // slider base properties
-            baseSpeed = 15f;
+            baseSpeed = 10f;
             baseAngle = 45f;
             baseGravity = 9.81f;
             baselinearDragCoefficient = 0f;
             baseAngularVelocity = 0f;
             baseAngularDragCoefficient = 0f;
+            baseMass = 2f;
+            baseRadius = 0.5f;
 
             // making UI visible
             isVisibleSliders = true;
@@ -190,7 +194,7 @@ namespace ProjectilePlayground
 
             resetButton.Click += Button_Click;
 
-            var tickProjectilesButton = new TickBox(Content.Load<Texture2D>("sprites/tickBox"), new Vector2(800, 50), 0.1f, Content.Load<SpriteFont>("fonts/font"), 2, Content.Load<Texture2D>("sprites/tick"))
+            var tickProjectilesButton = new TickBox(Content.Load<Texture2D>("sprites/tickBox"), new Vector2(750, 50), 0.1f, Content.Load<SpriteFont>("fonts/font"), 2, Content.Load<Texture2D>("sprites/tick"))
             {
                 text = "HIDE UI"
             };
@@ -280,10 +284,10 @@ namespace ProjectilePlayground
             { 
                 text_scroller = "na" ,
                 text_min = "0 m/s",
-                text_max = "50 m/s",
+                text_max = "30 m/s",
                 text_desc = "initial speed",
                 index = 0,
-                maxValue = 50f,
+                maxValue = 30f,
                 minValue = 0,
             };
 
@@ -302,7 +306,7 @@ namespace ProjectilePlayground
                 text_scroller = "na",
                 text_min = "0 m/s^2",
                 text_max = "50 m/s^2",
-                text_desc = "gravity",
+                text_desc = "\n gravity",
                 index = 2,
                 maxValue = 50f,
                 minValue = 0,
@@ -312,8 +316,8 @@ namespace ProjectilePlayground
 
             var dragSlider = new Slider(
                 Content.Load<Texture2D>("sprites/scroller"),
-                new Vector2(950, 400),
-                1.25f,
+                new Vector2(920, 400),
+                0.6f,
                 Content.Load<SpriteFont>("fonts/font"),
                 Content.Load<Texture2D>("sprites/sliderbar"),
                 Content.Load<Texture2D>("sprites/flashingCursor"),
@@ -321,10 +325,10 @@ namespace ProjectilePlayground
             {
                 text_scroller = "na",
                 text_min = "0",
-                text_max = "0.01",
-                text_desc = "drag coefficient",
+                text_max = "0.1",
+                text_desc = "drag \n coefficient",
                 index = 3,
-                maxValue = 0.01f,
+                maxValue = 0.1f,
                 minValue = 0,
             };
 
@@ -332,8 +336,8 @@ namespace ProjectilePlayground
 
             var angularDragSlider = new Slider(
                 Content.Load<Texture2D>("sprites/scroller"),
-                new Vector2(950, 300),
-                1.25f,
+                new Vector2(920, 300),
+                0.6f,
                 Content.Load<SpriteFont>("fonts/font"),
                 Content.Load<Texture2D>("sprites/sliderbar"),
                 Content.Load<Texture2D>("sprites/flashingCursor"),
@@ -342,7 +346,7 @@ namespace ProjectilePlayground
                 text_scroller = "na",
                 text_min = "0",
                 text_max = "1",
-                text_desc = "angular drag coefficient",
+                text_desc = "angular \n drag \n coefficient",
                 index = 5,
                 maxValue = 1f,
                 minValue = 0,
@@ -362,13 +366,55 @@ namespace ProjectilePlayground
                 text_scroller = "na",
                 text_min = "-100 rad/s",
                 text_max = "100 rad/s",
-                text_desc = "angular velocity",
+                text_desc = "angular \n velocity",
                 index = 4,
                 maxValue = 100f,
                 minValue = -100f,
             };
 
             angularSlider.Click += ScrollerClick;
+
+            var massSlider = new Slider(
+                Content.Load<Texture2D>("sprites/scroller"),
+                new Vector2(1100, 300),
+                0.75f,
+                Content.Load<SpriteFont>("fonts/font"),
+                Content.Load<Texture2D>("sprites/sliderbar"),
+                Content.Load<Texture2D>("sprites/flashingCursor"),
+                false)
+            {
+                text_scroller = "na",
+                text_min = "0.1 kg",
+                text_max = "100 kg",
+                text_desc = "\n mass",
+                index = 6,
+                maxValue = 100f,
+                minValue = 0.1f,
+            };
+
+            massSlider.Click += ScrollerClick;
+
+            var radiusSlider = new Slider(
+                Content.Load<Texture2D>("sprites/scroller"),
+                new Vector2(1100, 400),
+                0.75f,
+                Content.Load<SpriteFont>("fonts/font"),
+                Content.Load<Texture2D>("sprites/sliderbar"),
+                Content.Load<Texture2D>("sprites/flashingCursor"),
+                false)
+            {
+                text_scroller = "na",
+                text_min = "0.1 m",
+                text_max = "1 m",
+                text_desc = "\n radius",
+                index = 7,
+                maxValue = 1f,
+                minValue = 0.1f,
+            };
+
+            radiusSlider.Click += ScrollerClick;
+
+
 
             var cannon = new Cannon(
                 Content.Load<Texture2D>("sprites/cannonHead"),
@@ -431,7 +477,9 @@ namespace ProjectilePlayground
                 gravitySlider,
                 angularSlider,
                 angularDragSlider,
-                cannon
+                cannon,
+                massSlider,
+                radiusSlider
             };
 
             
@@ -633,6 +681,7 @@ namespace ProjectilePlayground
                     angularVelocity = baseAngularVelocity;
                     projectileProperties.linearDragCoefficient = baselinearDragCoefficient;
                     projectileProperties.angularDragCoefficient = baseAngularDragCoefficient;
+                    projectileProperties.mass = baseMass;
                     break;
 
                 case 8: // beach ball preset
@@ -731,6 +780,21 @@ namespace ProjectilePlayground
                     if (IsCustom) // only reset these if the custom projectile being used
                         projectileProperties.angularDragCoefficient = e.property;
                     break;
+                case 6:
+                    if (IsCustom) // only reset these if the custom projectile being used
+                        projectileProperties.mass = e.property;
+                    break;
+                case 7:
+                    if (IsCustom)   // only reset these if the custom projectile being used
+                    { // for ajusting the scale of the projectile when radius is changed
+                        projectileProperties.scale = (projectileProperties.radius * e.property) / projectileProperties.scale;
+
+                        projectileProperties.radius = e.property;
+
+                    }
+                        
+                        
+                    break;
                 default:
                     break;
 
@@ -797,6 +861,12 @@ namespace ProjectilePlayground
                         break;
                     case 5:
                         slider.PropertyPlacement(baseAngularDragCoefficient);
+                        break;
+                    case 6:
+                        slider.PropertyPlacement(baseMass);
+                        break;
+                    case 7:
+                        slider.PropertyPlacement(baseRadius);                        
                         break;
                     default :
                         break;
@@ -951,7 +1021,7 @@ namespace ProjectilePlayground
                     {
                         if (!IsCustom) // only update custom sliders if custom preset projectile is selected
                         {
-                            if (!(slider.index == 5 || slider.index == 3))
+                            if (!(slider.index == 5 || slider.index == 3 || slider.index == 6 || slider.index == 7))
                             {
                                 slider.Update(gameTime, environment, camera);
                             }
@@ -1091,7 +1161,7 @@ namespace ProjectilePlayground
                     {
                         if (!IsCustom) // only draw custom sliders if custom preset projectile is selected
                         {
-                            if (!(slider.index  == 5 || slider.index == 3))
+                            if (!(slider.index  == 5 || slider.index == 3 || slider.index == 6 || slider.index == 7))
                             {
                                 slider.Draw(gameTime, _spriteBatchUI);
                             }

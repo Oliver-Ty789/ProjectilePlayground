@@ -187,7 +187,7 @@ namespace ProjectilePlayground.Content.controls
                 float percentageBar = scrollerBar / wholeBar;
 
                 if (index == 3 || index == 5)
-                    text_scroller = $"{Math.Round(percentageBar * maxValue, 4)}";
+                    text_scroller = $"{Math.Round(percentageBar * maxValue, 3)}";
                 else
                     text_scroller = $"{Math.Round(percentageBar * maxValue, 1)}";
                 return (percentageBar * maxValue) + minValue;
@@ -268,22 +268,22 @@ namespace ProjectilePlayground.Content.controls
             }
             if (!string.IsNullOrEmpty(text_min))
             {
-                var x = BarRect.Left - (font.MeasureString(text_scroller).X / 2) - 40;
+                var x = BarRect.Left  - 40;
                 var y = BarRect.Y + (font.MeasureString(text_scroller).Y / 2);
 
                 spriteBatch.DrawString(font, text_min, new Vector2(x, y), penColour);
             }
             if (!string.IsNullOrEmpty(text_max))
             {
-                var x = BarRect.Right + (font.MeasureString(text_scroller).X / 2) + 20;
+                var x = BarRect.Right + 10;
                 var y = BarRect.Y + ((font.MeasureString(text_scroller).Y / 2) );
 
                 spriteBatch.DrawString(font, text_max, new Vector2(x, y), penColour);
             }
             if (!string.IsNullOrEmpty(text_desc))
             {
-                var x = (BarRect.Left - (font.MeasureString(text_scroller).X / 2)) - 100;
-                var y = BarRect.Y + (font.MeasureString(text_scroller).Y / 2) - 20;
+                var x = BarRect.Left - 50;
+                var y = BarRect.Y  - 50;
 
                 spriteBatch.DrawString(font, text_desc, new Vector2(x, y), penColour);
             }
