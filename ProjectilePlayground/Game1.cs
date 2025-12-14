@@ -100,6 +100,9 @@ namespace ProjectilePlayground
         // global values
 
         float globalScale;
+
+        // for collision settings
+        bool isRotationalCollisions;
        
 
         public Game1()
@@ -150,6 +153,9 @@ namespace ProjectilePlayground
 
             // global scale 
             globalScale = 1f;
+
+            // for collision settings
+            isRotationalCollisions = false;
 
 
             base.Initialize();
@@ -253,8 +259,15 @@ namespace ProjectilePlayground
                 text = "Place Horizontal Body"
             };
 
-
             targetHoriButton.Click += Button_Click;
+
+            var tickRotationalCollisionsButton = new TickBox(Content.Load<Texture2D>("sprites/tickBox"), new Vector2(550, 50), 0.1f, Content.Load<SpriteFont>("fonts/font"), 12, Content.Load<Texture2D>("sprites/tick"))
+            {
+                text = "UNLOCK ROTATION \n (WIP)"
+            };
+
+
+            tickRotationalCollisionsButton.Click += Button_Click;
 
 
             var speedSlider = new Slider(Content.Load<Texture2D>("sprites/scroller"), 
@@ -407,7 +420,8 @@ namespace ProjectilePlayground
                 cannonBallButton,
                 beachBallButton,
                 targetVertButton,
-                targetHoriButton
+                targetHoriButton,
+                tickRotationalCollisionsButton
             };
 
             _sliders = new Slider[]
@@ -677,6 +691,14 @@ namespace ProjectilePlayground
 
                     break;
 
+                case 12:
+                    if (isRotationalCollisions)
+                    {
+                        isRotationalCollisions = false;
+                    }
+                    else isRotationalCollisions = true;
+                    break;
+
                 default:
                     break;
 
@@ -797,7 +819,7 @@ namespace ProjectilePlayground
                         1f, // scale
                         new Vector2(0, 0), // linear velocity
                         0.5f, // restitution
-                        20f, // mass for handling collisions
+                        10f, // mass for handling collisions
                         false, // static?
                         0f, // angular velocity
                         0f, // linear drag co
@@ -857,8 +879,10 @@ namespace ProjectilePlayground
                             
                             _bodies[j].Move(normal * depth / 2);
 
-                            Collisions.ResolveCollisionsWithRotation(_bodies[i], _bodies[j], normal, environment, contact1, contact2, contactCount, pixelsPerM);
-                            //Collisions.ResolveCollisionsBasic(_bodies[i], _bodies[j], normal, environment, contact1, contact2, contactCount, depth);
+                            if (isRotationalCollisions)
+                                Collisions.ResolveCollisionsWithRotation(_bodies[i], _bodies[j], normal, environment, contact1, contact2, contactCount, pixelsPerM);
+                            else
+                                Collisions.ResolveCollisionsBasic(_bodies[i], _bodies[j], normal, environment, contact1, contact2, contactCount, depth);
                             _contacts.Add(contact1);
                             if (contactCount == 2)
                                 _contacts.Add(contact2);
@@ -1082,10 +1106,10 @@ namespace ProjectilePlayground
 
             
             // clear contacts to not keep contacts that dont exist anymore
-            foreach (var contact in _contacts)
-            {
-                Primitives2D.DrawRectangle(_spriteBatchUI, contact, new (5,5), Color.AliceBlue);
-            }
+            //foreach (var contact in _contacts)
+            //{
+            //    Primitives2D.DrawRectangle(_spriteBatchUI, contact, new (5,5), Color.AliceBlue);
+            //}
             _contacts.Clear();
 
             if (isPaused)

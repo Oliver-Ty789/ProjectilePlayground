@@ -299,9 +299,9 @@ namespace ProjectilePlayground
                     float rAPerpDotN = VectorMaths.DotProduct(rAPerp, normal);
                     float rBPerpDotN = VectorMaths.DotProduct(rBPerp, normal);
 
-                    float massDot = VectorMaths.DotProduct(normal, (bodyA.invMass + bodyB.invMass) * normal);
+                    //float massDot = VectorMaths.DotProduct(normal, (bodyA.invMass + bodyB.invMass) * normal);
 
-                    float demon =  massDot +
+                    float demon =  bodyA.invMass + bodyB.invMass +
                         rAPerpDotN * rAPerpDotN * bodyA.invInertia +
                         rBPerpDotN * rBPerpDotN * bodyB.invInertia;
 
@@ -393,6 +393,11 @@ namespace ProjectilePlayground
 
             bodyA.linearVelocity -= j * bodyA.invMass * normal;
             bodyB.linearVelocity += j * bodyB.invMass * normal;
+
+
+            // as rotation is locked in this subroutine
+            bodyA.angularVelocity = 0f;
+            bodyB.angularVelocity = 0f;
 
 
             

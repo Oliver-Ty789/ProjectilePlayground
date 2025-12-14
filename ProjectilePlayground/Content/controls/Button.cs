@@ -45,7 +45,7 @@ namespace ProjectilePlayground.Content.controls
 
             spriteBatch.Draw(texture, DrawingRect, colour);
 
-            if (!string.IsNullOrEmpty(text) && !(index == 2 || index == 3))
+            if (!string.IsNullOrEmpty(text) && !(index == 2 || index == 3 || index == 12))
             {
                 var x = (CollisionRect.X + (CollisionRect.Width / 2)) - (font.MeasureString(text).X / 2);
                 var y = (CollisionRect.Y + (CollisionRect.Height / 2)) - (font.MeasureString(text).Y / 2);
@@ -81,7 +81,7 @@ namespace ProjectilePlayground.Content.controls
                 if ((currentMouse.LeftButton == ButtonState.Released) && (previousMouse.LeftButton == ButtonState.Pressed))
                 {
                     
-                    if (index == 2 || index == 3)
+                    if (index == 2 || index == 3 || index == 12)
                         if (isTicked)   
                             isTicked = false;
                         else
