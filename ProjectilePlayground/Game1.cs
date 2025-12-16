@@ -608,29 +608,26 @@ namespace ProjectilePlayground
                     
 
                     break;
-                case 2:
+                case 2: // UI button
                     if (isVisibleSliders)
                         isVisibleSliders = false;
                     else
                         isVisibleSliders = true;
                     break;
 
-                case 3:
-                    for (int i = 0;  i < _bodies.Count; i++)
+                case 3: // friction tick box
+                   
+                    if (isFrictionless)
                     {
-                        if (_bodies[i].isFrictionless)
-                        {
-                            _bodies[i].isFrictionless = false;
-                            isFrictionless = false;
-                        }
-                        else
-                        {
-                            _bodies[i].isFrictionless = true;
-                            isFrictionless = true;
-                        }
+                        isFrictionless = false;
+                    }
+                    else
+                    {                         
+                        isFrictionless = true;
+                    }
 
                         
-                    }
+                    
                     break;
 
                 case 4: // zooming in
@@ -960,9 +957,19 @@ namespace ProjectilePlayground
                                     Collisions.ResolveCollisionsWithRotation(_bodies[i], _bodies[j], normal, environment, contact1, contact2, contactCount, pixelsPerM);
                                 }
                             }
-                                
+
                             else
-                                Collisions.ResolveCollisionsBasic(_bodies[i], _bodies[j], normal, environment, contact1, contact2, contactCount, depth);
+                            {
+                                if (!isFrictionless)
+                                {
+                                    Collisions.ResolveCollisionsBasicAndFriction(_bodies[i], _bodies[j], normal, environment, contact1, contact2, contactCount, depth);
+                                }
+                                else
+                                {
+                                    Collisions.ResolveCollisionsBasic(_bodies[i], _bodies[j], normal, environment, contact1, contact2, contactCount, depth);
+                                }
+                            }
+                                
                             _contacts.Add(contact1);
                             if (contactCount == 2)
                                 _contacts.Add(contact2);
