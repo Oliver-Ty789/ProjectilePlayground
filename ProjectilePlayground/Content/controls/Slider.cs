@@ -282,8 +282,19 @@ namespace ProjectilePlayground.Content.controls
             }
             if (!string.IsNullOrEmpty(text_desc))
             {
-                var x = BarRect.Left - 50;
-                var y = BarRect.Y  - 50;
+                float x;
+                float y;
+                if (index == 0) // speed slider has a different position
+                {
+                    x = BarRect.Left - 150;
+                    y = BarRect.Y;
+                }
+                else
+                {
+                    x = BarRect.Left - 50;
+                    y = BarRect.Y - 50;
+                }
+                    
 
                 spriteBatch.DrawString(font, text_desc, new Vector2(x, y), penColour);
             }

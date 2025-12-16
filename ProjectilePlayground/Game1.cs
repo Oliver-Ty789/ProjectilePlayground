@@ -316,7 +316,7 @@ namespace ProjectilePlayground
 
             var dragSlider = new Slider(
                 Content.Load<Texture2D>("sprites/scroller"),
-                new Vector2(920, 400),
+                new Vector2(900, 400),
                 0.6f,
                 Content.Load<SpriteFont>("fonts/font"),
                 Content.Load<Texture2D>("sprites/sliderbar"),
@@ -336,7 +336,7 @@ namespace ProjectilePlayground
 
             var angularDragSlider = new Slider(
                 Content.Load<Texture2D>("sprites/scroller"),
-                new Vector2(920, 300),
+                new Vector2(900, 300),
                 0.6f,
                 Content.Load<SpriteFont>("fonts/font"),
                 Content.Load<Texture2D>("sprites/sliderbar"),
@@ -969,7 +969,9 @@ namespace ProjectilePlayground
                                     Collisions.ResolveCollisionsBasic(_bodies[i], _bodies[j], normal, environment, contact1, contact2, contactCount, depth);
                                 }
                             }
-                                
+
+
+
                             _contacts.Add(contact1);
                             if (contactCount == 2)
                                 _contacts.Add(contact2);

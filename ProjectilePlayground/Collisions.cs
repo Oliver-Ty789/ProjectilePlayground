@@ -683,7 +683,7 @@ namespace ProjectilePlayground
             tangent = VectorMaths.UnitVector(tangent);
 
             var numeratorT = -(1 + e) * VectorMaths.DotProduct(tangent, relativeVelocity);
-            var denomExtensionT = normal * ((1 / bodyA.mass) + (1 / bodyB.mass));
+            var denomExtensionT = tangent * ((1 / bodyA.mass) + (1 / bodyB.mass));
             var denomT = VectorMaths.DotProduct(tangent, denomExtensionT);
 
             Vector2 frictionalImpulse;

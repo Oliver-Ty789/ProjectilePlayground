@@ -75,8 +75,8 @@ namespace ProjectilePlayground
             this.rotation = 0f;
             this.linearDragCoefficient = linearDragCoeffficient;
             this.angularDragCoefficient = angularDragCoefficient;
-            staticFrictionCoefficient = 0.5f;
-            dynamicFrictionCoefficient = 0.3f;
+            staticFrictionCoefficient = 0.6f;
+            dynamicFrictionCoefficient = 0.4f;
           
             this.mass = mass;
             this.restitution = restitution;
