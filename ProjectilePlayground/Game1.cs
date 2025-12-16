@@ -950,7 +950,17 @@ namespace ProjectilePlayground
                             _bodies[j].Move(normal * depth / 2);
 
                             if (isRotationalCollisions)
-                                Collisions.ResolveCollisionsWithRotation(_bodies[i], _bodies[j], normal, environment, contact1, contact2, contactCount, pixelsPerM);
+                            {
+                                if (!isFrictionless)
+                                {
+                                    Collisions.ResolveCollisionsWithRotationAndFriction(_bodies[i], _bodies[j], normal, environment, contact1, contact2, contactCount, pixelsPerM);
+                                }
+                                else
+                                {
+                                    Collisions.ResolveCollisionsWithRotation(_bodies[i], _bodies[j], normal, environment, contact1, contact2, contactCount, pixelsPerM);
+                                }
+                            }
+                                
                             else
                                 Collisions.ResolveCollisionsBasic(_bodies[i], _bodies[j], normal, environment, contact1, contact2, contactCount, depth);
                             _contacts.Add(contact1);

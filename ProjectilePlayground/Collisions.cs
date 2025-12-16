@@ -358,8 +358,8 @@ namespace ProjectilePlayground
         }
         public static void ResolveCollisionsBasic(RigidBody bodyA, RigidBody bodyB, Vector2 normal, Environment environment, Vector2 contact1, Vector2 contact2, int contactCount, float depth)
         {
-            var relativeVelocity =  bodyB.linearVelocity - bodyA.linearVelocity;
-            
+            var relativeVelocity = bodyB.linearVelocity - bodyA.linearVelocity;
+
             var j = 0f; // scalar quantity for impulse
 
             var e = MathF.Min(bodyA.restitution, bodyB.restitution);
@@ -369,7 +369,7 @@ namespace ProjectilePlayground
                 return;
             }
 
-           
+
 
             var numerator = -(1 + e) * VectorMaths.DotProduct(normal, relativeVelocity);
             var denomExtension = normal * ((1 / bodyA.mass) + (1 / bodyB.mass));
@@ -400,17 +400,17 @@ namespace ProjectilePlayground
             bodyB.angularVelocity = 0f;
 
 
-            
 
-            
+
+
 
 
             if (!bodyA.isFrictionless)
             {
-                
-                
+
+
                 // static friction
-                
+
 
                 Vector2 frictionNormalA = normal * (environment.gravity * bodyA.mass * MathF.Cos(bodyA.rotation)); // find mag and direction of friction normal
                 Vector2 frictionParallelA = new Vector2(-frictionNormalA.Y, frictionNormalA.X); // make direction parallel to contact surfaces
@@ -429,31 +429,201 @@ namespace ProjectilePlayground
                 bodyB.dynamicFriction = frictionParallelB * bodyB.dynamicFrictionCoefficient * unitOppositeLinearVelcoityB;
             }
 
-            
+
         }
 
+        public static void ResolveCollisionsWithRotationAndFriction(RigidBody bodyA, RigidBody bodyB, Vector2 normal, Environment environment, Vector2 contact1, Vector2 contact2, int contactCount, float pixelsPerM)
+        {
+
+            var relativeVelocity = Vector2.Zero;
+
+            var e = MathF.Min(bodyA.restitution, bodyB.restitution);
+
+            float staticFrictionCoefficient = bodyA.staticFrictionCoefficient;
+            float dyncamicFrictionCoefficient = bodyA.dynamicFrictionCoefficient;
+
+            Vector2[] contactList = { contact1, contact2 };
+            Vector2[] impulseList = new Vector2[2];
+            Vector2[] frictionImpulseList = new Vector2[2];
+
+            Vector2[] rAList = new Vector2[2];
+            Vector2[] rBList = new Vector2[2];
+
+            float[] jList = new float[2];
+
+            Vector2 centerA = GetArithmeticMeanPos(bodyA.CollisionRect.vertices);
+            Vector2 centerB = GetArithmeticMeanPos(bodyB.CollisionRect.vertices);
+
+
+            for (int i = 0; i < contactCount; i++)
+            {
 
 
 
-        /// maybe implement later
-        //public static bool IntersectingCirclePolygon(Vector2 center, float radius, VerticesRectangle rectangle, Rectangle originalRect,  float angle)
-        //{
-
-        //    var rotatedCenter = VerticesRectangle.GetTransformedCircle(center, rectangle.Center, -angle, new Vector2(0, 0), 1f);
+                Vector2 rA = contactList[i] - centerA;
+                Vector2 rB = contactList[i] - centerB;
 
 
-        //    var rectCenter = rectangle.Center;
-        //    // checking left side
-        
-        //    // only ever need to check horizontal
-        //    if (MathF.Abs(rectCenter.X - rotatedCenter.X) < MathF.Abs(rectCenter.X - (rotatedCenter.X + radius)))
-        //    {
 
-        //    }
+                Vector2 rAPerp = new(-rA.Y, rA.X);
+                Vector2 rBPerp = new(-rB.Y, rB.X);
+
+                rAList[i] = rA;
+                rBList[i] = rB;
 
 
-        //    return true;
-        //}
+
+                Vector2 angularLinearVelocityA = rAPerp * bodyA.angularVelocity;
+                Vector2 angularLinearVelocityB = rBPerp * bodyB.angularVelocity;
+
+
+
+                relativeVelocity = (bodyB.linearVelocity + angularLinearVelocityB) - (angularLinearVelocityA + bodyA.linearVelocity);
+
+
+
+                float contactVelocityMag = VectorMaths.DotProduct(relativeVelocity, normal);
+
+                if (contactVelocityMag > 0f) // collisions already being resolved
+                {
+                    return;
+                }
+
+                float rAPerpDotN = VectorMaths.DotProduct(rAPerp, normal);
+                float rBPerpDotN = VectorMaths.DotProduct(rBPerp, normal);
+
+                //float massDot = VectorMaths.DotProduct(normal, (bodyA.invMass + bodyB.invMass) * normal);
+
+                float demon = bodyA.invMass + bodyB.invMass +
+                    rAPerpDotN * rAPerpDotN * bodyA.invInertia +
+                    rBPerpDotN * rBPerpDotN * bodyB.invInertia;
+
+
+
+                float j = -(1f + e) * contactVelocityMag;
+
+                j /= demon;
+
+                j /= contactCount;
+
+                jList[i] = j;
+ 
+                Vector2 impulse = j * normal;
+
+                impulseList[i] = impulse;
+            }
+
+            for (int i = 0; i < contactCount; i++)
+            {
+                Vector2 impulse = impulseList[i];
+
+                bodyA.linearVelocity += -impulse * bodyA.invMass;
+                bodyB.linearVelocity += impulse * bodyB.invMass;
+
+
+
+                if (!(bodyB.shapeType == ShapeType.Circle))
+                    bodyB.angularVelocity -= VectorMaths.CrossProductArea(impulse, rBList[i]) * bodyB.invInertia;
+
+                if (!(bodyA.shapeType == ShapeType.Circle))
+                    bodyA.angularVelocity += VectorMaths.CrossProductArea(impulse, rAList[i]) * bodyA.invInertia;
+
+
+
+
+            }
+
+            for (int i = 0; i < contactCount; i++)
+            {
+
+                Vector2 rA = contactList[i] - centerA;
+                Vector2 rB = contactList[i] - centerB;
+
+                Vector2 rAPerp = new(-rA.Y, rA.X);
+                Vector2 rBPerp = new(-rB.Y, rB.X);
+
+                rAList[i] = rA;
+                rBList[i] = rB;
+
+                Vector2 angularLinearVelocityA = rAPerp * bodyA.angularVelocity;
+                Vector2 angularLinearVelocityB = rBPerp * bodyB.angularVelocity;
+
+                relativeVelocity = (bodyB.linearVelocity + angularLinearVelocityB) - (angularLinearVelocityA + bodyA.linearVelocity);
+
+                
+
+                Vector2 tangent = relativeVelocity - VectorMaths.DotProduct(relativeVelocity, normal) * normal; // finds tangent to normal
+
+                if (VectorMaths.NearlyEqual(tangent, Vector2.Zero))
+                {
+                    continue;
+                }
+                else
+                {
+                    tangent.Normalize();
+                }
+                float rAPerpDotT = VectorMaths.DotProduct(rAPerp, tangent);
+                float rBPerpDotT = VectorMaths.DotProduct(rBPerp, tangent);
+
+                float demon = bodyA.invMass + bodyB.invMass +
+                    rAPerpDotT * rAPerpDotT * bodyA.invInertia +
+                    rBPerpDotT * rBPerpDotT * bodyB.invInertia;
+
+                float contactVelocityMag = VectorMaths.DotProduct(relativeVelocity, tangent);
+
+                float jT = - contactVelocityMag;
+
+                jT /= demon;
+
+                jT /= contactCount;
+
+                Vector2 frictionImpulse;
+
+                float j = jList[i];
+
+                if (MathF.Abs(jT) <= j * staticFrictionCoefficient) // if impulse is abiding Coulombs law 
+                {
+                    frictionImpulse = jT * tangent;
+                }
+                else
+                {
+                    frictionImpulse = -j * tangent * dyncamicFrictionCoefficient;
+                }
+
+
+
+                 frictionImpulseList[i] = frictionImpulse;
+            }
+
+            for (int i = 0; i < contactCount; i++)
+            {
+                Vector2 frictionImpulse = frictionImpulseList[i];
+
+                bodyA.linearVelocity += -frictionImpulse * bodyA.invMass;
+                bodyB.linearVelocity += frictionImpulse * bodyB.invMass;
+                if (!(bodyB.shapeType == ShapeType.Circle))
+                    bodyB.angularVelocity -= VectorMaths.CrossProductArea(frictionImpulse, rBList[i]) * bodyB.invInertia;
+
+                if (!(bodyA.shapeType == ShapeType.Circle))
+                    bodyA.angularVelocity += VectorMaths.CrossProductArea(frictionImpulse, rAList[i]) * bodyA.invInertia;
+            }
+            bodyA.collisionCount += 1;
+            bodyB.collisionCount += 1;
+
+            if (bodyA.collisionCount == 2)
+            {
+                bodyA.isTrail = false;
+            }
+
+            if (bodyB.collisionCount == 2)
+            {
+                bodyB.isTrail = false;
+
+            }
+            return;
+
+
+        }
 
     }
 }
