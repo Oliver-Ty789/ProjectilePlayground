@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Security.Cryptography;
+using System.Security.Principal;
 using System.Timers;
 using System.Xml.Linq;
 using CsvHelper;
@@ -27,6 +29,10 @@ namespace ProjectilePlayground
         private List<Timer> _timers;
         private List<RigidBody> _bodies;
         private List<Vector2> _contacts;
+        private ScaledSprite [] _titleSprites;
+        private Button [] _titleButtons;
+        private ScaledSprite[] _tutorialSprites;
+        private Button [] _tutorialButtons;
         
         
         // for queues
@@ -59,6 +65,8 @@ namespace ProjectilePlayground
        
         readonly Vector2 startPos = new(50,605);
         DateTime timerStartTime;
+        DateTime PausedStartTime;
+        float PausedTime;
         bool isFrictionless;
         float initial_speed;
         float initial_angle;
@@ -87,7 +95,6 @@ namespace ProjectilePlayground
         TargetButton targetVertButton;
         TargetButton targetHoriButton;
 
-
         // base values
 
         float baseSpeed;
@@ -99,12 +106,16 @@ namespace ProjectilePlayground
         float baseMass;
         float baseRadius;
 
-        // global values
-
-        float globalScale;
-
         // for collision settings
         bool isRotationalCollisions;
+
+        // for choosing the right scene
+        bool isTitle;
+        bool isTutorial;
+
+        // for the tutorial slides
+        int slideNumber;
+
        
 
         public Game1()
@@ -125,13 +136,18 @@ namespace ProjectilePlayground
             // parameters for first projectile (test)
             
             isFrictionless = true;
-            initial_speed = 15f;
+            initial_speed = 10f;
             initial_angle = 45f;
 
             presetName = "basic";
             projectileProperties = new ProjectileProperties();
             IsCustom = true;
-            
+
+            // tutorial/title screens
+            isTitle = true;
+            isTutorial = false;
+            slideNumber = 0;
+
 
             Get_CsvData();
 
@@ -144,7 +160,7 @@ namespace ProjectilePlayground
             baseAngularVelocity = 0f;
             baseAngularDragCoefficient = 0f;
             baseMass = 2f;
-            baseRadius = 0.5f;
+            baseRadius = 0.25f;
 
             // making UI visible
             isVisibleSliders = true;
@@ -155,11 +171,12 @@ namespace ProjectilePlayground
             // closing the program
             isExit = false;
 
-            // global scale 
-            globalScale = 1f;
-
             // for collision settings
             isRotationalCollisions = false;
+
+            // for handling paused errors
+            PausedTime = 0f;
+
 
 
             base.Initialize();
@@ -171,9 +188,52 @@ namespace ProjectilePlayground
 
             _spriteBatchCamera = new SpriteBatch(GraphicsDevice);
 
-            // TODO: use this.Content to load your game content here
+            // load title content in here
 
-            projectile = new Projectile(Content.Load<Texture2D>("sprites/"+projectileProperties.path), startPos, projectileProperties.scale, baseSpeed, projectileProperties.mass, baseAngle, projectileProperties.radius, projectileProperties.linearDragCoefficient, angularVelocity, projectileProperties.angularDragCoefficient, projectileProperties.coeffiecentOfResitution, isFrictionless);
+            var titleSprite = new ScaledSprite(Content.Load<Texture2D>("sprites/title"), new Vector2(230, 90), 1f);
+
+            var simulationButton = new Button(Content.Load<Texture2D>("sprites/simulationButton"), new Vector2(300, 400), 1f, Content.Load<SpriteFont>("fonts/font"), 13);
+
+            simulationButton.Click += Button_Click;
+
+            var tutorialButton = new Button(Content.Load<Texture2D>("sprites/tutorialButton"), new Vector2(800, 400), 1f, Content.Load<SpriteFont>("fonts/font"), 14);
+
+            tutorialButton.Click += Button_Click;
+
+            _titleSprites = new ScaledSprite[1] { 
+                titleSprite,
+            };
+
+            _titleButtons = new Button[2] { simulationButton,
+                tutorialButton};
+
+
+            // load tutorial content in here
+
+            _tutorialSprites = new ScaledSprite[6];
+        
+
+            for (int i = 0; i < 6; i++) // adding all the slides for the tutorial
+            {
+                var sprite = new ScaledSprite(Content.Load<Texture2D>("sprites/tutorial" + i.ToString()), Vector2.Zero, 1f);
+                _tutorialSprites[i] = sprite;
+            }
+
+            var tutorialButtonLeft = new Button(Content.Load<Texture2D>("sprites/ButtonLeft"), new Vector2(40, 650), 1f, Content.Load<SpriteFont>("fonts/font"), 15);
+
+            tutorialButtonLeft.Click += Button_Click;
+
+            var tutorialButtonRight = new Button(Content.Load<Texture2D>("sprites/ButtonRight"), new Vector2(1100, 650), 1f, Content.Load<SpriteFont>("fonts/font"), 16);
+
+            tutorialButtonRight.Click += Button_Click;
+
+            _tutorialButtons = new Button[2] { tutorialButtonLeft, 
+                tutorialButtonRight };
+
+
+            // TODO: use this.Content to load your simulation content here
+
+            projectile = new Projectile(Content.Load<Texture2D>("sprites/"+projectileProperties.path), startPos, projectileProperties.scale, baseSpeed * ConversionToSI(), projectileProperties.mass, baseAngle, projectileProperties.radius, projectileProperties.linearDragCoefficient, angularVelocity, projectileProperties.angularDragCoefficient, projectileProperties.coeffiecentOfResitution, isFrictionless);
             
             pixelsPerM = ConversionToSI();
 
@@ -217,9 +277,9 @@ namespace ProjectilePlayground
 
             zoomOutButton.Click += Button_Click;
 
-            menuButton = new Button(Content.Load<Texture2D>("sprites/Button"), new Vector2(50, 100), 8f, Content.Load<SpriteFont>("fonts/font"), 1)
+            menuButton = new Button(Content.Load<Texture2D>("sprites/Button"), new Vector2(50, 100), 8f, Content.Load<SpriteFont>("fonts/font"), 5)
             {
-                text = "PRESS 'm' TO RETURN TO SIM \n \n PRESS 'esc' TO EXIT PROGRAM",
+                text = "PRESS 'esc' TO RETURN TO SIM \n \n PRESS 'm' TO RETURN TO MAIN MENU",
             };
 
             var tennisBallButton = new Button(Content.Load<Texture2D>("sprites/Button"), new Vector2(680, 680), 0.6f, Content.Load<SpriteFont>("fonts/font"), 6)
@@ -388,7 +448,7 @@ namespace ProjectilePlayground
                 text_max = "100 kg",
                 text_desc = "\n mass",
                 index = 6,
-                maxValue = 100f,
+                maxValue = 99.9f,
                 minValue = 0.1f,
             };
 
@@ -408,7 +468,7 @@ namespace ProjectilePlayground
                 text_max = "1 m",
                 text_desc = "\n radius",
                 index = 7,
-                maxValue = 1f,
+                maxValue = 0.9f,
                 minValue = 0.1f,
             };
 
@@ -419,7 +479,7 @@ namespace ProjectilePlayground
             var cannon = new Cannon(
                 Content.Load<Texture2D>("sprites/cannonHead"),
                 new Vector2(50, 610),
-                1f * globalScale,
+                1f,
                 Content.Load<Texture2D>("sprites/cannonWheel"),
                 Content.Load<SpriteFont>("fonts/font"),
                 Content.Load<Texture2D>("sprites/flashingCursor"),
@@ -508,6 +568,8 @@ namespace ProjectilePlayground
 
             _timers = new List<Timer> { };
 
+
+
             
         }
 
@@ -529,7 +591,6 @@ namespace ProjectilePlayground
             }
             
         }
-
         
         public float ConversionToSI()
 
@@ -545,7 +606,6 @@ namespace ProjectilePlayground
             return pixelsToMeter;
         }
 
-
         // called everytime shootbutton is clicked, fires new projectile & sets up runtime timers
         private void Button_Click(object sender, System.EventArgs e)
         {
@@ -555,6 +615,8 @@ namespace ProjectilePlayground
             { 
                 case 0: // shoot button
                     _bodies.Remove(projectile.body);
+
+                    PausedTime = 0f;
                     
                     projectile = new Projectile(Content.Load<Texture2D>("sprites/" + projectileProperties.path), startPos, projectileProperties.scale, initial_speed, projectileProperties.mass, initial_angle, projectileProperties.radius, projectileProperties.linearDragCoefficient, angularVelocity, projectileProperties.angularDragCoefficient, projectileProperties.coeffiecentOfResitution, isFrictionless);
 
@@ -737,7 +799,7 @@ namespace ProjectilePlayground
 
                     break;
 
-                case 12:
+                case 12: // unlock rotations tick box
                     if (isRotationalCollisions)
                     {
                         isRotationalCollisions = false;
@@ -745,8 +807,42 @@ namespace ProjectilePlayground
                     else isRotationalCollisions = true;
                     break;
 
-                default:
+                case 13: // go to simulation button
+                    isTitle = false;
                     break;
+
+                case 14: // go to tutorial button
+                    isTutorial = true;
+                    isTitle = false;
+                    break;
+                case 15: // left button in tutorial
+                    if (slideNumber == 0)
+                    {
+                        isTutorial = false;
+                        isTitle = true;
+                       
+                    }
+                    else
+                    {
+                        slideNumber -= 1;
+                    }
+                    break;
+
+                case 16: // right button in tutorial
+                    if (slideNumber == 5)
+                    {
+                        isTutorial = false;
+                        isTitle = true;
+                        slideNumber = 0;
+                    }
+                    else
+                    {
+                        slideNumber += 1;
+                    }
+                    break;
+
+                default:
+                   break;
 
             }
         }
@@ -805,8 +901,9 @@ namespace ProjectilePlayground
             if (projectile.body.linearVelocity == new Vector2(0, 0) && !isExit)
             {
             }
-            else
+            else if (!isPaused)
             {
+                
                 time = time + 0.1f;
                 try
                 {
@@ -871,8 +968,6 @@ namespace ProjectilePlayground
 
             }
         }
-
-
 
         void PlaceTargetBody(TargetButton button)
         {
@@ -970,9 +1065,15 @@ namespace ProjectilePlayground
                                 }
                             }
 
+                            if (_bodies[i].isStatic || _bodies[j].isStatic) // for applying gravity only when not in contact of ground
+                            {
+                                _bodies[i].isOnGround = true;
+                                _bodies[j].isOnGround = true;
+                            }
+                            
+                           
 
-
-                            _contacts.Add(contact1);
+                                _contacts.Add(contact1);
                             if (contactCount == 2)
                                 _contacts.Add(contact2);
 
@@ -998,29 +1099,29 @@ namespace ProjectilePlayground
             }
         }
 
-        protected override void Update(GameTime gameTime)
+        protected void UpdateSimulation(GameTime gameTime)
         {
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
-                isExit = true;
             previousKeys = currentKeys;
             currentKeys = Keyboard.GetState();
 
-            //Console.WriteLine(projectile.body.linearVelocity.ToString());
 
-            if (previousKeys.IsKeyDown(Keys.M) && currentKeys.IsKeyUp(Keys.M))
+
+            if (previousKeys.IsKeyDown(Keys.Escape) && currentKeys.IsKeyUp(Keys.Escape))
             {
                 if (isPaused)
                 {
                     isPaused = false;
-
+                    PausedTime += (float)(DateTime.Now - PausedStartTime).TotalSeconds;
                 }
                 else
+                {
                     isPaused = true;
+                    PausedStartTime = DateTime.Now;
+                    
+                }
+                    
             }
 
-
-            
-           
 
             // TODO: Add your update logic here
 
@@ -1033,7 +1134,7 @@ namespace ProjectilePlayground
                 foreach (var button in _buttons)
                 {
                     button.Update(gameTime, environment, camera);
-                   
+
                 }
                 if (isVisibleSliders)
                     foreach (var slider in _sliders)
@@ -1049,7 +1150,7 @@ namespace ProjectilePlayground
                         {
                             slider.Update(gameTime, environment, camera);
                         }
-                        
+
                     }
 
 
@@ -1061,22 +1162,25 @@ namespace ProjectilePlayground
                     body.Update(gameTime, environment, camera);
                 }
 
-                
+
 
                 foreach (var projectile in _projectiles)
                 {
                     projectile.Update(gameTime, environment, camera);
                 }
 
-
                 if (projectile.body.previousLinearVelocity.Y < 0 && projectile.body.linearVelocity.Y > 0 && projectile.body.isTrail) // adding trail node at highest point
                 {
+                    var time = (float)(DateTime.Now - timerStartTime).TotalSeconds;
+                    time -= PausedTime;
+                    
+
                     TrailNode node = new TrailNode(
                         Content.Load<SpriteFont>("fonts/font"),
                         (startPos - projectile.position).Y / pixelsPerM,
-                        (float)(DateTime.Now - timerStartTime).TotalSeconds,
+                        time,
                         VectorMaths.Length(projectile.position - startPos) / pixelsPerM,
-                        Content.Load<Texture2D>("sprites/"+projectileProperties.path),
+                        Content.Load<Texture2D>("sprites/" + projectileProperties.path),
                         new Vector2(projectile.position.X, projectile.position.Y - 6), // provides an offset to place in middle of path
                         trailBigNodeScale,
                         true
@@ -1090,7 +1194,7 @@ namespace ProjectilePlayground
                     {
                         Console.WriteLine(e.Message);
                     }
-                    
+
                 }
 
                 if (queuing) // add projectile to projectile list
@@ -1115,24 +1219,71 @@ namespace ProjectilePlayground
                         tickqueuing = false;
                         _nodeQueue.Clear();
                     }
-                    catch(Exception e)
+                    catch (Exception e)
                     {
                         Console.WriteLine(e.Message);
                     }
-                    
+
                 }
 
             }
-            if (isExit) Exit();
+            else // if paused
+            {
 
-                
+
+                if (previousKeys.IsKeyDown(Keys.M) && currentKeys.IsKeyUp(Keys.M)) // title button pressed
+                {
+                    isTitle = true;
+                    isPaused = false;
+                    _projectiles.Clear();
+                    ResetAllSliders();
+                }
+            }
+            if (isExit) Exit();
+        }
+
+        protected void UpdateTitleScreen(GameTime gameTime)
+        {
+            foreach (var sprite in _titleSprites)
+            {
+                sprite.Update(gameTime, environment, camera);
+            }
+            foreach (var button in _titleButtons)
+            {
+                button.Update(gameTime, environment, camera);
+            }
+        }
+
+        protected void UpdateTutorialScreen(GameTime gameTime)
+        {
+            var currentScreen = _tutorialSprites[slideNumber];
+            currentScreen.Update(gameTime, environment, camera);
+
+            foreach (var button in _tutorialButtons)
+            {
+                button.Update(gameTime, environment, camera);
+            }
+        }
+
+        protected override void Update(GameTime gameTime)
+        {
+            
+            if (isTitle)
+            {
+                UpdateTitleScreen(gameTime);
+            }
+            else if (isTutorial)
+            {
+                UpdateTutorialScreen(gameTime);
+            }
+            else
+                UpdateSimulation(gameTime);
 
             base.Update(gameTime);
         }
-        
 
 
-        protected override void Draw(GameTime gameTime)
+        protected void DrawSimulation(GameTime gameTime)
         {
             if (!isPaused)
                 GraphicsDevice.Clear(Color.CornflowerBlue);
@@ -1147,10 +1298,10 @@ namespace ProjectilePlayground
             /// 2. scalable elements that will be effected by the camera.
             /// they need to be broken up to allow for the appropriate transformation matrix
             /// to be applied to the correct sprites
-            
+
             _spriteBatchCamera.Begin(samplerState: SamplerState.LinearWrap, transformMatrix: camera.GetCameraScaleMatrix());
             _spriteBatchUI.Begin(samplerState: SamplerState.LinearWrap);
-            
+
             foreach (var projectile in _projectiles) // projectiles drawn here to keep the trail nodes
             {
                 projectile.Draw(gameTime, _spriteBatchCamera);
@@ -1163,10 +1314,10 @@ namespace ProjectilePlayground
                 }
                 else if (!(body.shapeType == ShapeType.Circle)) // dont draw projectiles
                     body.Draw(gameTime, _spriteBatchCamera);
-                
+
             }
             foreach (var button in _buttons)
-            { 
+            {
                 button.Draw(gameTime, _spriteBatchUI, _spriteBatchCamera);
             }
             if (isVisibleSliders)
@@ -1180,7 +1331,7 @@ namespace ProjectilePlayground
                     {
                         if (!IsCustom) // only draw custom sliders if custom preset projectile is selected
                         {
-                            if (!(slider.index  == 5 || slider.index == 3 || slider.index == 6 || slider.index == 7))
+                            if (!(slider.index == 5 || slider.index == 3 || slider.index == 6 || slider.index == 7))
                             {
                                 slider.Draw(gameTime, _spriteBatchUI);
                             }
@@ -1190,10 +1341,10 @@ namespace ProjectilePlayground
                             slider.Draw(gameTime, _spriteBatchUI);
                         }
                     }
-                        
+
                 }
 
-            
+
             // clear contacts to not keep contacts that dont exist anymore
             //foreach (var contact in _contacts)
             //{
@@ -1202,20 +1353,64 @@ namespace ProjectilePlayground
             _contacts.Clear();
 
             if (isPaused)
-                menuButton.Draw(gameTime, _spriteBatchUI);
+                menuButton.Draw(gameTime, _spriteBatchUI, _spriteBatchCamera);
 
 
             _spriteBatchCamera.End();
             _spriteBatchUI.End();
-            
 
-            
+        }
 
+        protected void DrawTitleScreen(GameTime gameTime)
+        {
+            GraphicsDevice.Clear(Color.CornflowerBlue);
 
+            _spriteBatchUI.Begin(samplerState: SamplerState.LinearWrap);
+            _spriteBatchCamera.Begin(samplerState: SamplerState.LinearWrap, transformMatrix: camera.GetCameraScaleMatrix());
+            foreach (var sprite in _titleSprites)
+            {
+                sprite.Draw(gameTime, _spriteBatchUI);
+            }
+            foreach (var button in _titleButtons)
+            {
+                button.Draw(gameTime, _spriteBatchUI, _spriteBatchCamera);
+            }
+            _spriteBatchUI.End();
+            _spriteBatchCamera.End();
+        }
+
+        protected void DrawTutorialScreen(GameTime gameTime)
+        {
+            _spriteBatchUI.Begin(samplerState: SamplerState.LinearWrap);
+            _spriteBatchCamera.Begin(samplerState: SamplerState.LinearWrap, transformMatrix: camera.GetCameraScaleMatrix());
+
+            var currentScreen = _tutorialSprites[slideNumber];
+            currentScreen.Draw(gameTime, _spriteBatchUI);
+
+            foreach (var button in _tutorialButtons)
+            {
+                button.Draw(gameTime, _spriteBatchUI, _spriteBatchCamera);
+            }
+
+            _spriteBatchUI.End();
+            _spriteBatchCamera.End();
+
+        }
+        protected override void Draw(GameTime gameTime)
+        {
+
+            if (isTitle)
+            {
+                DrawTitleScreen(gameTime);
+            }
+            else if (isTutorial)
+            {
+                DrawTutorialScreen(gameTime);
+            }
+            else
+                DrawSimulation(gameTime);
 
             base.Draw(gameTime);
         }
     }
 }
-// use projectile positions
-// place small dots at every other frame or so, contains stuff like velocity, height and tiem

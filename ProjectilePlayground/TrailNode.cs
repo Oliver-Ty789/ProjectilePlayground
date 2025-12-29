@@ -73,7 +73,7 @@ namespace ProjectilePlayground
 
             
 
-                base.Draw(gameTime, spriteBatch);
+               
         }
 
         public override void Update(Microsoft.Xna.Framework.GameTime gameTime, Environment environment, Camera2D camera)

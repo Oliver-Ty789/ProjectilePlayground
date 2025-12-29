@@ -70,9 +70,6 @@ namespace ProjectilePlayground
             // normal is pointing in the right direction
 
 
-
-
-
             Vector2 centerA2 = GetArithmeticMeanPos(verticesA);
             Vector2 centerB2 = GetArithmeticMeanPos(verticesB);
 

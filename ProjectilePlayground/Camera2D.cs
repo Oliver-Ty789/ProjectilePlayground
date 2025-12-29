@@ -51,7 +51,7 @@ namespace ProjectilePlayground
                 zoom = 2f;
             }
            
-            Console.WriteLine($"zoom  {zoom}");
+          
         }
 
         public void ResetZoom()

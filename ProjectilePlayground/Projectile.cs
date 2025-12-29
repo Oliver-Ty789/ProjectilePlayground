@@ -65,7 +65,7 @@ namespace ProjectilePlayground
             {
                 Console.WriteLine(ex.ToString());
             }
-            base.Draw(gameTime, _spriteBatch);
+            
         }
 
         public override void Update(GameTime gameTime, Environment environment, Camera2D camera)

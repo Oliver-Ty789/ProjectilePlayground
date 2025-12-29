@@ -1,10 +1,6 @@
 ﻿using System; 
 
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -42,19 +38,6 @@ namespace ProjectilePlayground
                     (int)(texture.Height));
             }
         }
-        //public VerticesRectangle CollisionRect
-        //{
-        //    get
-        //    {
-        //        return new VerticesRectangle(
-        //            position,
-        //            texture.Width,
-        //            texture.Height,
-        //            scale);
-        //    }
-        //    set;
-        //}
-
         public VerticesRectangle CollisionRect
         {
             get => _collisionRect;
@@ -74,6 +57,8 @@ namespace ProjectilePlayground
         public virtual void Draw(GameTime gameTime, SpriteBatch spriteBatch)
         {
             // used to be overrided in subclasses if needed
+            spriteBatch.Draw(texture, DrawingRect, SourceRect, Color.White);
+
         }
         public virtual void Update(GameTime gameTime, Environment environment, Camera2D camera)
         {

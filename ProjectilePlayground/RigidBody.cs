@@ -50,6 +50,7 @@ namespace ProjectilePlayground
         public bool isStatic;
         public bool isCollisionResolved;
         public bool isFrictionless;
+        public bool isOnGround; // for disabling gravity when colliding with ground rigid body
 
         public readonly float radius;
        
@@ -66,6 +67,7 @@ namespace ProjectilePlayground
         private Vector2 magnusForce;
         private Vector2 resultantForce;
         private Vector2 initialPos;
+        private float pixelsPerM;
 
         // private instatiation as different shapes need different instantiations
         private RigidBody(Texture2D texture, Vector2 position, float scale, Vector2 linearVelocity,  float mass, float restitution, float area, bool isStatic, float radius, ShapeType shapeType, float angularVelocity, float linearDragCoeffficient, float angularDragCoefficient, bool isFrictionless, float pixelsPerM) : base(texture, position, scale)
@@ -75,8 +77,8 @@ namespace ProjectilePlayground
             this.rotation = 0f;
             this.linearDragCoefficient = linearDragCoeffficient;
             this.angularDragCoefficient = angularDragCoefficient;
-            staticFrictionCoefficient = 0.6f;
-            dynamicFrictionCoefficient = 0.4f;
+            staticFrictionCoefficient = 0.8f;
+            dynamicFrictionCoefficient = 0.6f;
           
             this.mass = mass;
             this.restitution = restitution;
@@ -91,6 +93,7 @@ namespace ProjectilePlayground
             this.shapeType = shapeType;
             isCollisionResolved = false;
             this.isFrictionless = isFrictionless;
+            this.pixelsPerM = pixelsPerM;
 
             _collisionRect = new VerticesRectangle(position, texture.Width, texture.Height, scale);
             _contactPoints = new List<Vector2>()
@@ -122,6 +125,9 @@ namespace ProjectilePlayground
 
             isTrail = true;
             collisionCount = 0;
+            isOnGround = false;
+
+
             
         }
 
@@ -210,58 +216,25 @@ namespace ProjectilePlayground
             }
         }
 
-        private void ApplyFriction(Environment environment, float delta)
-        {
-            // calc resultant velocity (calc is short for calculator for anyone who just joined the stream) 
-            // gravity
-            resultantForce = environment.gravity * mass;
-
-            // drag
-            resultantForce += resistiveLinearForce;
-
-
-            // magnus
-            resultantForce += magnusForce;
-
-
-            // these magnitudes need to be parallel, therefore they need to be projected onto one another (edit: try to apply this in collisions)
-        
-           
-            var acceleration = new Vector2(resultantForce.X / mass, resultantForce.Y / mass);
-            projection = VectorMaths.DotProduct(acceleration, staticFriction);
-            var accMag = MathF.Abs(VectorMaths.Length(acceleration));
-            var staticMag = MathF.Abs(VectorMaths.Length(staticFriction));
-
-            
-
-            if (staticMag < accMag) // apply dynamic friction
-            {
-                linearVelocity += dynamicFriction;
-                var dynamicFrictionMag = VectorMaths.Length(dynamicFriction);
-                angularVelocity -= dynamicFrictionMag * (0.005f * angularVelocity);
-                
-            }
-            // appling static friction is merely not moving the object as there is no further external forces
-            else
-            {
-                linearVelocity = Vector2.Zero;
-                angularVelocity = 0f;
-            }
-        }
-
         private void ApplyForces(Environment environment, float delta)
         {
             resultantForce = Vector2.Zero;
 
-
-            
             // gravity
+            if (!isOnGround) // only apply gravity when not in contact of ground
+            {
+                resultantForce += environment.gravity * mass;
 
-            resultantForce += environment.gravity * mass;
+            }
+            else
+            {
+                isOnGround = false;
+            }
 
 
-            // drag
-            resultantForce += resistiveLinearForce;
+
+                // drag
+                resultantForce += resistiveLinearForce;
 
 
             // magnus
@@ -285,12 +258,7 @@ namespace ProjectilePlayground
            
         }
         
-        //public static void HandleCollisions(RigidBody body1, RigidBody body2, out RigidBody bodya, out RigidBody bodyb) // called from main
-        //{
-        //   var bodya = 
-        //}
-
-
+        
         public override void Draw(GameTime gameTime, SpriteBatch spriteBatch)
         {
             var pivot = new Vector2(SourceRect.Width / 2f, SourceRect.Height / 2f);
@@ -302,8 +270,7 @@ namespace ProjectilePlayground
             }
 
             //Primitives2D.FillRectangle(spriteBatch, CollisionRect.Center.X + position.X, CollisionRect.Center.X + position.Y , 10, 10, Color.White);
-            Primitives2D.FillRectangle(spriteBatch, position.X, position.Y, 10, 10, Color.Orange);
-            base.Draw(gameTime, spriteBatch);
+            
         }
 
         public override void Update(GameTime gameTime, Environment environment, Camera2D camera)
@@ -313,16 +280,14 @@ namespace ProjectilePlayground
             
             if (!isStatic)
             {
+               
                 ApplyDrag(environment);
                 ApplyMagnus();
                 ApplyForces(environment, delta);
 
-                if (!isFrictionless)
-                {
-                    ApplyFriction(environment, delta);
-                }
-
                 ApplyVelocity(delta);
+                
+                
             }
             
             

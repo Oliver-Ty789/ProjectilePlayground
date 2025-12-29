@@ -186,10 +186,10 @@ namespace ProjectilePlayground.Content.controls
 
                 float percentageBar = scrollerBar / wholeBar;
 
-                if (index == 3 || index == 5)
-                    text_scroller = $"{Math.Round(percentageBar * maxValue, 3)}";
+                if (index == 3 || index == 5) // for coefficient sliders
+                    text_scroller = $"{Math.Round((percentageBar * maxValue) + minValue, 3)}";
                 else
-                    text_scroller = $"{Math.Round(percentageBar * maxValue, 1)}";
+                    text_scroller = $"{Math.Round((percentageBar * maxValue) + minValue, 1)}";
                 return (percentageBar * maxValue) + minValue;
             }
                 
@@ -269,14 +269,14 @@ namespace ProjectilePlayground.Content.controls
             if (!string.IsNullOrEmpty(text_min))
             {
                 var x = BarRect.Left  - 40;
-                var y = BarRect.Y + (font.MeasureString(text_scroller).Y / 2);
+                var y = BarRect.Y + 20;
 
                 spriteBatch.DrawString(font, text_min, new Vector2(x, y), penColour);
             }
             if (!string.IsNullOrEmpty(text_max))
             {
                 var x = BarRect.Right + 10;
-                var y = BarRect.Y + ((font.MeasureString(text_scroller).Y / 2) );
+                var y = BarRect.Y + 20;
 
                 spriteBatch.DrawString(font, text_max, new Vector2(x, y), penColour);
             }
