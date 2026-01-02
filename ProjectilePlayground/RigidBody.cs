@@ -196,8 +196,6 @@ namespace ProjectilePlayground
         {
             // applying a formula to determine drag forces
 
-           
-           
             resistiveLinearForce = new Vector2(Convert.ToSingle(-linearDragCoefficient * 0.5 * environment.airPressure * area * MathF.Pow(linearVelocity.X, 2)),
                 Convert.ToSingle(linearDragCoefficient * 0.5 * environment.airPressure * area * MathF.Pow(linearVelocity.Y, 2)));
 
@@ -233,8 +231,8 @@ namespace ProjectilePlayground
 
 
 
-                // drag
-                resultantForce += resistiveLinearForce;
+            // drag
+            resultantForce += resistiveLinearForce;
 
 
             // magnus

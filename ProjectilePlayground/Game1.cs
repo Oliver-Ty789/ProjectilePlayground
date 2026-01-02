@@ -105,6 +105,7 @@ namespace ProjectilePlayground
         float baseAngularDragCoefficient;
         float baseMass;
         float baseRadius;
+        float baseScale;
 
         // for collision settings
         bool isRotationalCollisions;
@@ -161,6 +162,7 @@ namespace ProjectilePlayground
             baseAngularDragCoefficient = 0f;
             baseMass = 2f;
             baseRadius = 0.25f;
+            baseScale = 0.3f;
 
             // making UI visible
             isVisibleSliders = true;
@@ -643,8 +645,16 @@ namespace ProjectilePlayground
                     initial_speed = baseSpeed * pixelsPerM;
                     environment.gravity = new Vector2(0, baseGravity * pixelsPerM);
                     angularVelocity = baseAngularVelocity;
-                    projectileProperties.linearDragCoefficient = baselinearDragCoefficient;
-                    projectileProperties.angularDragCoefficient = baseAngularDragCoefficient;
+
+                    if (IsCustom) // only reset these if the custom preset is seleced
+                    {
+                        projectileProperties.linearDragCoefficient = baselinearDragCoefficient;
+                        projectileProperties.angularDragCoefficient = baseAngularDragCoefficient;
+                        projectileProperties.mass = baseMass;
+                        projectileProperties.radius = baseRadius;
+                        projectileProperties.scale = baseScale;
+                    }
+
                     ResetAllSliders(); // sets position of sliders to correct place
                     // reset all rigid bodies
                     _bodies.Clear();
@@ -917,7 +927,8 @@ namespace ProjectilePlayground
                         Content.Load<Texture2D>("sprites/" + projectileProperties.path),
                         new Vector2(projectile.position.X, projectile.position.Y - 4), // provide offset
                         trailNodeScale,
-                        false
+                        false,
+                        Content.Load<Texture2D>("sprites/textBox")
                         );
                         _nodeQueue.Enqueue(node);
                         tickqueuing = true;
@@ -1015,87 +1026,85 @@ namespace ProjectilePlayground
             }
         }
 
+        void CollisionPhase()
+        {
+            for (int i = 0; i < _bodies.Count - 1; i++)
+            {
+                //int count = 0;
+
+                for (int j = 1 + i; j < _bodies.Count; j++) // only resolve collisions for bodies that haven't been fully resolved yet
+                {
+                    if (Collisions.IntersectingPolygons(_bodies[i].CollisionRect.Center + _bodies[i].position, _bodies[i].CollisionRect.vertices, _bodies[j].CollisionRect.Center + _bodies[j].position, _bodies[j].CollisionRect.vertices, out Vector2 normal, out float depth))
+                    {
+
+                        Collisions.GetContactPoints(
+                            _bodies[i].CollisionRect.vertices,
+                            _bodies[j].CollisionRect.vertices,
+                            out Vector2 contact1,
+                            out Vector2 contact2,
+                            out int contactCount);
+
+
+                        // make sure bodies do not overlap
+                        _bodies[i].Move(-normal * depth / 2);
+
+                        _bodies[j].Move(normal * depth / 2);
+
+                        if (isRotationalCollisions)
+                        {
+                            if (!isFrictionless)
+                            {
+                                Collisions.ResolveCollisionsWithRotationAndFriction(_bodies[i], _bodies[j], normal, environment, contact1, contact2, contactCount, pixelsPerM);
+                            }
+                            else
+                            {
+                                Collisions.ResolveCollisionsWithRotation(_bodies[i], _bodies[j], normal, environment, contact1, contact2, contactCount, pixelsPerM);
+                            }
+                        }
+
+                        else
+                        {
+                            if (!isFrictionless)
+                            {
+                                Collisions.ResolveCollisionsBasicAndFriction(_bodies[i], _bodies[j], normal, environment, contact1, contact2, contactCount, depth);
+                            }
+                            else
+                            {
+                                Collisions.ResolveCollisionsBasic(_bodies[i], _bodies[j], normal, environment, contact1, contact2, contactCount, depth);
+                            }
+                        }
+
+                        if (_bodies[i].isStatic || _bodies[j].isStatic) // for applying gravity only when not in contact of ground
+                        {
+                            _bodies[i].isOnGround = true;
+                            _bodies[j].isOnGround = true;
+                        }
+
+
+
+                        _contacts.Add(contact1);
+                        if (contactCount == 2)
+                            _contacts.Add(contact2);
+
+
+
+                    }
+
+                }
+
+
+            }
+        }
         void HandleCollisions()
         {
             if (_bodies.Count > 1) // only try to detect collisions if more than one rigid body present
             {
-                for (int i = 0; i < _bodies.Count - 1; i++) 
+                int numberOfEpochs = 10;
+                for (int i = 0; i < numberOfEpochs; i++) // repeating the collision dectection to increase resolution
                 {
-                    //int count = 0;
-
-                    for (int j = 1 + i; j < _bodies.Count; j++) // only resolve collisions for bodies that haven't been fully resolved yet
-                    {
-                        if (Collisions.IntersectingPolygons(_bodies[i].CollisionRect.Center + _bodies[i].position,_bodies[i].CollisionRect.vertices, _bodies[j].CollisionRect.Center + _bodies[j].position, _bodies[j].CollisionRect.vertices, out Vector2 normal, out float depth))
-                        {
-                            
-                            Collisions.GetContactPoints(
-                                _bodies[i].CollisionRect.vertices,
-                                _bodies[j ].CollisionRect.vertices,
-                                out Vector2 contact1,
-                                out Vector2 contact2,
-                                out int contactCount);
-
-
-                            // make sure bodies do not overlap
-                            _bodies[i].Move(-normal * depth / 2);
-                            
-                            _bodies[j].Move(normal * depth / 2);
-
-                            if (isRotationalCollisions)
-                            {
-                                if (!isFrictionless)
-                                {
-                                    Collisions.ResolveCollisionsWithRotationAndFriction(_bodies[i], _bodies[j], normal, environment, contact1, contact2, contactCount, pixelsPerM);
-                                }
-                                else
-                                {
-                                    Collisions.ResolveCollisionsWithRotation(_bodies[i], _bodies[j], normal, environment, contact1, contact2, contactCount, pixelsPerM);
-                                }
-                            }
-
-                            else
-                            {
-                                if (!isFrictionless)
-                                {
-                                    Collisions.ResolveCollisionsBasicAndFriction(_bodies[i], _bodies[j], normal, environment, contact1, contact2, contactCount, depth);
-                                }
-                                else
-                                {
-                                    Collisions.ResolveCollisionsBasic(_bodies[i], _bodies[j], normal, environment, contact1, contact2, contactCount, depth);
-                                }
-                            }
-
-                            if (_bodies[i].isStatic || _bodies[j].isStatic) // for applying gravity only when not in contact of ground
-                            {
-                                _bodies[i].isOnGround = true;
-                                _bodies[j].isOnGround = true;
-                            }
-                            
-                           
-
-                                _contacts.Add(contact1);
-                            if (contactCount == 2)
-                                _contacts.Add(contact2);
-
-
-
-                        }
-                        //else // if not collidingn with certain rigid body, remove from colliding list
-                        //{
-                        //    count++;
-                        //    _bodies[i]._collidingWith.Remove(_bodies[(i + j)]);
-                        //}
-
-                        //if (count == _bodies.Count - 1) // if not colliding with anything, make collision resloved false
-                        //{
-                        //    _bodies[i].isCollisionResolved = false;
-
-                        //}
-
-                    }
-
-
+                    CollisionPhase();
                 }
+                    
             }
         }
 
@@ -1183,7 +1192,8 @@ namespace ProjectilePlayground
                         Content.Load<Texture2D>("sprites/" + projectileProperties.path),
                         new Vector2(projectile.position.X, projectile.position.Y - 6), // provides an offset to place in middle of path
                         trailBigNodeScale,
-                        true
+                        true,
+                        Content.Load<Texture2D>("sprites/textBox")
                         );
                     try
                     {
@@ -1302,10 +1312,7 @@ namespace ProjectilePlayground
             _spriteBatchCamera.Begin(samplerState: SamplerState.LinearWrap, transformMatrix: camera.GetCameraScaleMatrix());
             _spriteBatchUI.Begin(samplerState: SamplerState.LinearWrap);
 
-            foreach (var projectile in _projectiles) // projectiles drawn here to keep the trail nodes
-            {
-                projectile.Draw(gameTime, _spriteBatchCamera);
-            }
+            
             foreach (var body in _bodies)
             {
                 if (body.isStatic)
@@ -1315,6 +1322,10 @@ namespace ProjectilePlayground
                 else if (!(body.shapeType == ShapeType.Circle)) // dont draw projectiles
                     body.Draw(gameTime, _spriteBatchCamera);
 
+            }
+            foreach (var projectile in _projectiles) // projectiles drawn here to keep the trail nodes
+            {
+                projectile.Draw(gameTime, _spriteBatchCamera);
             }
             foreach (var button in _buttons)
             {

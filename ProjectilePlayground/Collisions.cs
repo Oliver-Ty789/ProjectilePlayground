@@ -309,11 +309,17 @@ namespace ProjectilePlayground
 
                 j /= demon;
 
-                j /= contactCount;
+                if (bodyA.shapeType == ShapeType.Rectangle && bodyB.shapeType == ShapeType.Rectangle) // make sure projectile collisions only happen once
+                {
+                    j /= contactCount;
+                }
+                else // still need to reduce j by a bit as impulse is still too large
+                {
+                    j /= 1.3f;
+                }
 
 
-
-                Vector2 impulse = j * normal;
+                    Vector2 impulse = j * normal;
 
                 impulseList[i] = impulse;
             }
@@ -502,7 +508,14 @@ namespace ProjectilePlayground
 
                 j /= demon;
 
-                j /= contactCount;
+                if (bodyA.shapeType == ShapeType.Rectangle && bodyB.shapeType == ShapeType.Rectangle) // make sure projectile collisions only happen once
+                {
+                    j /= contactCount;
+                }
+                else // still need to reduce j by a bit as impulse is still too large
+                {
+                    j /= 1.3f;
+                }
 
                 jList[i] = j;
 

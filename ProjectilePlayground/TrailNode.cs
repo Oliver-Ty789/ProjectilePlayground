@@ -20,6 +20,7 @@ namespace ProjectilePlayground
         private bool isHovering;
         private Color colour;
         private VerticesRectangle _collisionRect;
+        private Texture2D boxTexture;
 
         // public
         public float height;
@@ -27,7 +28,7 @@ namespace ProjectilePlayground
         public float range;
         public bool isYellow;
 
-        public TrailNode(SpriteFont font, float height, float time, float range, Texture2D texture, Vector2 position, float scale, bool isYellow) : base(texture, position, scale)
+        public TrailNode(SpriteFont font, float height, float time, float range, Texture2D texture, Vector2 position, float scale, bool isYellow, Texture2D boxTexture) : base(texture, position, scale)
         {
             this.font = font;
             this.height = height;
@@ -37,6 +38,7 @@ namespace ProjectilePlayground
             this.penColour = Color.Black;
             _collisionRect = new VerticesRectangle(position, texture.Width, texture.Height, scale);
             CollisionRect = _collisionRect;
+            this.boxTexture = boxTexture;
         }
 
         public override void Draw(Microsoft.Xna.Framework.GameTime gameTime, SpriteBatch spriteBatch)
@@ -53,6 +55,14 @@ namespace ProjectilePlayground
             if (isHovering) // display properties as well
             {
                 colour = Color.Gray;
+
+
+                // for the background box
+                var xbox = position.X - 120;
+                var ybox = position.Y - 70;
+                spriteBatch.Draw(boxTexture, new Vector2(xbox, ybox), Color.White);
+
+
                 spriteBatch.Draw(texture, DrawingRect, colour);
                 var x = position.X - 90;
                 // height
@@ -64,6 +74,9 @@ namespace ProjectilePlayground
                 // range
                 var yrange = position.Y + 30;
                 spriteBatch.DrawString(font, $"range: {Math.Round(range, 2)}m", new Vector2(x, yrange), penColour);
+
+                
+
             }
 
             else
