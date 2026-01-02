@@ -329,15 +329,9 @@ namespace ProjectilePlayground
                 Vector2 impulse = impulseList[i];
 
                 bodyA.linearVelocity += -impulse * bodyA.invMass;
-                bodyB.linearVelocity += impulse * bodyB.invMass;
-
-
-
-                if (!(bodyB.shapeType == ShapeType.Circle))
-                    bodyB.angularVelocity -= VectorMaths.CrossProductArea(impulse, rBList[i]) * bodyB.invInertia;
-
-                if (!(bodyA.shapeType == ShapeType.Circle))
-                    bodyA.angularVelocity += VectorMaths.CrossProductArea(impulse, rAList[i]) * bodyA.invInertia;
+                bodyB.linearVelocity += impulse * bodyB.invMass;                
+                bodyB.angularVelocity -= VectorMaths.CrossProductArea(impulse, rBList[i]) * bodyB.invInertia;
+                bodyA.angularVelocity += VectorMaths.CrossProductArea(impulse, rAList[i]) * bodyA.invInertia;
 
 
 
@@ -531,13 +525,10 @@ namespace ProjectilePlayground
                 bodyA.linearVelocity += -impulse * bodyA.invMass;
                 bodyB.linearVelocity += impulse * bodyB.invMass;
 
+                bodyB.angularVelocity -= VectorMaths.CrossProductArea(impulse, rBList[i]) * bodyB.invInertia;
 
-
-                if (!(bodyB.shapeType == ShapeType.Circle))
-                    bodyB.angularVelocity -= VectorMaths.CrossProductArea(impulse, rBList[i]) * bodyB.invInertia;
-
-                if (!(bodyA.shapeType == ShapeType.Circle))
-                    bodyA.angularVelocity += VectorMaths.CrossProductArea(impulse, rAList[i]) * bodyA.invInertia;
+                
+                bodyA.angularVelocity += VectorMaths.CrossProductArea(impulse, rAList[i]) * bodyA.invInertia;
 
 
 
@@ -612,11 +603,8 @@ namespace ProjectilePlayground
 
                 bodyA.linearVelocity += -frictionImpulse * bodyA.invMass;
                 bodyB.linearVelocity += frictionImpulse * bodyB.invMass;
-                if (!(bodyB.shapeType == ShapeType.Circle))
-                    bodyB.angularVelocity -= VectorMaths.CrossProductArea(frictionImpulse, rBList[i]) * bodyB.invInertia;
-
-                if (!(bodyA.shapeType == ShapeType.Circle))
-                    bodyA.angularVelocity += VectorMaths.CrossProductArea(frictionImpulse, rAList[i]) * bodyA.invInertia;
+                bodyB.angularVelocity -= VectorMaths.CrossProductArea(frictionImpulse, rBList[i]) * bodyB.invInertia;
+                bodyA.angularVelocity += VectorMaths.CrossProductArea(frictionImpulse, rAList[i]) * bodyA.invInertia;
             }
             bodyA.collisionCount += 1;
             bodyB.collisionCount += 1;

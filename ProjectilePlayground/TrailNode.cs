@@ -21,6 +21,7 @@ namespace ProjectilePlayground
         private Color colour;
         private VerticesRectangle _collisionRect;
         private Texture2D boxTexture;
+        private Vector2 scaledDrawingOffset;
 
         // public
         public float height;
@@ -39,9 +40,10 @@ namespace ProjectilePlayground
             _collisionRect = new VerticesRectangle(position, texture.Width, texture.Height, scale);
             CollisionRect = _collisionRect;
             this.boxTexture = boxTexture;
+            
         }
 
-        public override void Draw(Microsoft.Xna.Framework.GameTime gameTime, SpriteBatch spriteBatch)
+        public void Draw(Microsoft.Xna.Framework.GameTime gameTime, SpriteBatch spriteBatch, SpriteBatch spriteBatchUI)
         {
             if (isYellow)
             {
@@ -58,22 +60,22 @@ namespace ProjectilePlayground
 
 
                 // for the background box
-                var xbox = position.X - 120;
-                var ybox = position.Y - 70;
-                spriteBatch.Draw(boxTexture, new Vector2(xbox, ybox), Color.White);
+                var xbox = scaledDrawingOffset.X - 120;
+                var ybox = scaledDrawingOffset.Y - 70;
+                spriteBatchUI.Draw(boxTexture, new Vector2(xbox, ybox), Color.White);
 
 
                 spriteBatch.Draw(texture, DrawingRect, colour);
-                var x = position.X - 90;
+                var x = scaledDrawingOffset.X - 90;
                 // height
-                var yheight = position.Y - 30;
-                spriteBatch.DrawString(font, $"height: {Math.Round(height, 2)}m", new Vector2(x, yheight), penColour);
+                var yheight = scaledDrawingOffset.Y - 30;
+                spriteBatchUI.DrawString(font, $"height: {Math.Round(height, 2)}m", new Vector2(x, yheight), penColour);
                 // time
-                var ytime = position.Y;
-                spriteBatch.DrawString(font, $"time: {Math.Round(time, 2)}s", new Vector2(x, ytime), penColour);
+                var ytime = scaledDrawingOffset.Y;
+                spriteBatchUI.DrawString(font, $"time: {Math.Round(time, 2)}s", new Vector2(x, ytime), penColour);
                 // range
-                var yrange = position.Y + 30;
-                spriteBatch.DrawString(font, $"range: {Math.Round(range, 2)}m", new Vector2(x, yrange), penColour);
+                var yrange = scaledDrawingOffset.Y + 30;
+                spriteBatchUI.DrawString(font, $"range: {Math.Round(range, 2)}m", new Vector2(x, yrange), penColour);
 
                 
 
@@ -94,10 +96,14 @@ namespace ProjectilePlayground
 
             currentMouse = Mouse.GetState();
 
-            Vector2 scaledOffset = new(currentMouse.X, currentMouse.Y);
-            scaledOffset = Vector2.Transform(scaledOffset, camera.camInverseMatrix);
+            Vector2 scaledMouseOffset = new(currentMouse.X, currentMouse.Y);
+            scaledMouseOffset = Vector2.Transform(scaledMouseOffset, camera.camInverseMatrix);
 
-            var mouseRect = new VerticesRectangle(scaledOffset, 1, 1, 1);
+            scaledDrawingOffset = position;
+            scaledDrawingOffset = Vector2.Transform(scaledDrawingOffset, camera.GetCameraScaleMatrix());
+
+
+            var mouseRect = new VerticesRectangle(scaledMouseOffset, 1, 1, 1);
 
             if (Collisions.IntersectingPolygons(mouseRect.Center, mouseRect.vertices, CollisionRect.Center, CollisionRect.vertices, out Vector2 normal, out float depth))
             {

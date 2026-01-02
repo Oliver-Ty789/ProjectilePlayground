@@ -312,24 +312,24 @@ namespace ProjectilePlayground
 
             cannonBallButton.Click += Button_Click;
 
-            targetVertButton = new TargetButton(Content.Load<Texture2D>("sprites/target"), new Vector2(200, 40), 1f, Content.Load<SpriteFont>("fonts/font"), 10, "target")
+            targetVertButton = new TargetButton(Content.Load<Texture2D>("sprites/targetFinal"), new Vector2(200, 40), 1f, Content.Load<SpriteFont>("fonts/font"), 10, "targetFinal")
             { 
-                text = "Place Vertical Body"
+                text = "\n \n \n \n \n \n \n Place Vertical Target"
             };
 
 
             targetVertButton.Click += Button_Click;
 
-            targetHoriButton = new TargetButton(Content.Load<Texture2D>("sprites/targetHori"), new Vector2(300, 70), 1f, Content.Load<SpriteFont>("fonts/font"), 11, "targetHori")
+            targetHoriButton = new TargetButton(Content.Load<Texture2D>("sprites/targetFinalHori"), new Vector2(300, 70), 1f, Content.Load<SpriteFont>("fonts/font"), 11, "targetFinalHori")
             {
-                text = "Place Horizontal Body"
+                text = "\n \n \n \n Place Horizontal Target"
             };
 
             targetHoriButton.Click += Button_Click;
 
             var tickRotationalCollisionsButton = new TickBox(Content.Load<Texture2D>("sprites/tickBox"), new Vector2(550, 50), 0.1f, Content.Load<SpriteFont>("fonts/font"), 12, Content.Load<Texture2D>("sprites/tick"))
             {
-                text = "UNLOCK ROTATION \n (WIP)"
+                text = "UNLOCK ROTATION"
             };
 
 
@@ -1325,7 +1325,7 @@ namespace ProjectilePlayground
             }
             foreach (var projectile in _projectiles) // projectiles drawn here to keep the trail nodes
             {
-                projectile.Draw(gameTime, _spriteBatchCamera);
+                projectile.Draw(gameTime, _spriteBatchCamera, _spriteBatchUI);
             }
             foreach (var button in _buttons)
             {

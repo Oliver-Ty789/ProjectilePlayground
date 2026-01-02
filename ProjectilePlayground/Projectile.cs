@@ -49,7 +49,7 @@ namespace ProjectilePlayground
             return pixelsToMeter;
         }
 
-        public override void Draw(GameTime gameTime, SpriteBatch _spriteBatch)
+        public void Draw(GameTime gameTime, SpriteBatch _spriteBatch, SpriteBatch _spriteBatchUI)
         {
             body.Draw(gameTime, _spriteBatch);
 
@@ -57,7 +57,7 @@ namespace ProjectilePlayground
             {
                 foreach (var node in _nodes)
                 {
-                    node.Draw(gameTime, _spriteBatch);
+                    node.Draw(gameTime, _spriteBatch, _spriteBatchUI);
                 }
             }
 

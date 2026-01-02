@@ -232,7 +232,15 @@ namespace ProjectilePlayground
 
 
             // drag
-            resultantForce += resistiveLinearForce;
+            if (linearVelocity.X  > 0)
+            {
+                resultantForce += resistiveLinearForce;
+            }
+            else // to stop drag increasing velocity when going backwards
+            {
+                resultantForce += new Vector2(-resistiveLinearForce.X, resistiveLinearForce.Y);
+            }
+
 
 
             // magnus
@@ -262,10 +270,10 @@ namespace ProjectilePlayground
             var pivot = new Vector2(SourceRect.Width / 2f, SourceRect.Height / 2f);
             spriteBatch.Draw(texture, DrawingRect, SourceRect, Color.White, rotation, pivot, SpriteEffects.None, 0f);
 
-            for (int i = 0; i < 4; i++)
-            {
-                Primitives2D.DrawLine(spriteBatch, CollisionRect.vertices[i], CollisionRect.vertices[(i + 1) % 4], Color.White);
-            }
+            //for (int i = 0; i < 4; i++)
+            //{
+            //    Primitives2D.DrawLine(spriteBatch, CollisionRect.vertices[i], CollisionRect.vertices[(i + 1) % 4], Color.White);
+            //}
 
             //Primitives2D.FillRectangle(spriteBatch, CollisionRect.Center.X + position.X, CollisionRect.Center.X + position.Y , 10, 10, Color.White);
             
