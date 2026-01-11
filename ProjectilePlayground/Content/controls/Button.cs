@@ -1,10 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-
-using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -26,7 +20,8 @@ namespace ProjectilePlayground.Content.controls
         public SpriteFont font;
         public bool isTicked;
         public event EventHandler Click;
-        public bool isClicked { get; private set; }
+        public bool isClicked;
+       
         public Color penColour { get; set; }
         public string text { get; set; }
         public int index { get; set; }
@@ -38,8 +33,10 @@ namespace ProjectilePlayground.Content.controls
             this.index = index;
             _collisionRect = new VerticesRectangle(position, texture.Width, texture.Height, scale);
             CollisionRect = _collisionRect;
+            isClicked = false;
+
         }
-        public override void Draw(GameTime gameTime ,SpriteBatch spriteBatch)
+        public virtual void Draw(GameTime gameTime ,SpriteBatch spriteBatch, SpriteBatch spritebatchCamera)
         {
             colour = Color.White;
 
@@ -48,7 +45,7 @@ namespace ProjectilePlayground.Content.controls
 
             spriteBatch.Draw(texture, DrawingRect, colour);
 
-            if (!string.IsNullOrEmpty(text) && !(index == 2))
+            if (!string.IsNullOrEmpty(text) && !(index == 2 || index == 3 || index == 12))
             {
                 var x = (CollisionRect.X + (CollisionRect.Width / 2)) - (font.MeasureString(text).X / 2);
                 var y = (CollisionRect.Y + (CollisionRect.Height / 2)) - (font.MeasureString(text).Y / 2);
@@ -57,7 +54,7 @@ namespace ProjectilePlayground.Content.controls
             }
         }
 
-        public override void Update(GameTime gameTime, Environment E)
+        public override void Update(GameTime gameTime, Environment E, Camera2D camera)
         {
             previousMouse = currentMouse;
             currentMouse = Mouse.GetState();
@@ -66,15 +63,25 @@ namespace ProjectilePlayground.Content.controls
 
             isHovering = false;
 
-            // checking if mouse is hovering and or clicking the button
+            
+            if (isClicked)
+            {
+                if ((currentMouse.LeftButton == ButtonState.Released) && (previousMouse.LeftButton == ButtonState.Pressed))
+                {
+                    // call place new target body subroutine in game1
+                    Click?.Invoke(this, new EventArgs());
+                }
+            }
 
-            if (Collisions.IntersectingPolygons(mouseRect.vertices, CollisionRect.vertices))
+            // checking if mouse is hovering and or clicking the button
+            if (Collisions.IntersectingPolygons(mouseRect.Center ,mouseRect.vertices, CollisionRect.Center, CollisionRect.vertices, out Vector2 normal, out float depth))
             {
                 isHovering = true;
 
                 if ((currentMouse.LeftButton == ButtonState.Released) && (previousMouse.LeftButton == ButtonState.Pressed))
                 {
-                    if (index == 2)
+                    
+                    if (index == 2 || index == 3 || index == 12)
                         if (isTicked)   
                             isTicked = false;
                         else
@@ -83,7 +90,9 @@ namespace ProjectilePlayground.Content.controls
                     Click?.Invoke(this, new EventArgs());
                 }
             }
-            base.Update(gameTime, E);
+
+            
+            base.Update(gameTime, E, camera);
         }
 
 

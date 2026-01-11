@@ -34,6 +34,7 @@ namespace ProjectilePlayground.Content.controls
         public int timeBeforeNextDelete;
         public float overallChangeInRotation;
         public bool isClockwise;
+        public Vector2 rectOffset; // for matching placement of sprite
 
    
        // public VerticesRectangle verticesRectangleProperty;
@@ -87,6 +88,7 @@ namespace ProjectilePlayground.Content.controls
             _collisionRect = new VerticesRectangle(position, texture.Width, texture.Height, scale);
             CollisionRect = _collisionRect;
             overallChangeInRotation = 0;
+            rectOffset = new Vector2(0,0);
 
         }
         private bool IsNegative()
@@ -145,6 +147,7 @@ namespace ProjectilePlayground.Content.controls
             float space = (BarRect.Right - (BarRect.Left + (20 * scale)));
 
             position = new Vector2((space * percentageBar) + BarRect.Left, position.Y);
+    
             _collisionRect = new VerticesRectangle(position, texture.Width, texture.Height, scale);
         
                
@@ -183,10 +186,10 @@ namespace ProjectilePlayground.Content.controls
 
                 float percentageBar = scrollerBar / wholeBar;
 
-                if (index == 3 || index == 5)
-                    text_scroller = $"{Math.Round(percentageBar * maxValue, 4)}";
+                if (index == 3 || index == 5) // for coefficient sliders
+                    text_scroller = $"{Math.Round((percentageBar * maxValue) + minValue, 3)}";
                 else
-                    text_scroller = $"{Math.Round(percentageBar * maxValue, 1)}";
+                    text_scroller = $"{Math.Round((percentageBar * maxValue) + minValue, 1)}";
                 return (percentageBar * maxValue) + minValue;
             }
                 
@@ -265,22 +268,33 @@ namespace ProjectilePlayground.Content.controls
             }
             if (!string.IsNullOrEmpty(text_min))
             {
-                var x = BarRect.Left - (font.MeasureString(text_scroller).X / 2) - 40;
-                var y = BarRect.Y + (font.MeasureString(text_scroller).Y / 2);
+                var x = BarRect.Left  - 40;
+                var y = BarRect.Y + 20;
 
                 spriteBatch.DrawString(font, text_min, new Vector2(x, y), penColour);
             }
             if (!string.IsNullOrEmpty(text_max))
             {
-                var x = BarRect.Right + (font.MeasureString(text_scroller).X / 2) + 20;
-                var y = BarRect.Y + ((font.MeasureString(text_scroller).Y / 2) );
+                var x = BarRect.Right + 10;
+                var y = BarRect.Y + 20;
 
                 spriteBatch.DrawString(font, text_max, new Vector2(x, y), penColour);
             }
             if (!string.IsNullOrEmpty(text_desc))
             {
-                var x = (BarRect.Left - (font.MeasureString(text_scroller).X / 2)) - 100;
-                var y = BarRect.Y + (font.MeasureString(text_scroller).Y / 2) - 20;
+                float x;
+                float y;
+                if (index == 0) // speed slider has a different position
+                {
+                    x = BarRect.Left - 150;
+                    y = BarRect.Y;
+                }
+                else
+                {
+                    x = BarRect.Left - 50;
+                    y = BarRect.Y - 50;
+                }
+                    
 
                 spriteBatch.DrawString(font, text_desc, new Vector2(x, y), penColour);
             }
@@ -289,7 +303,7 @@ namespace ProjectilePlayground.Content.controls
                 textBox.Draw(gameTime, spriteBatch);
         }
 
-        public override void Update(GameTime gameTime, Environment E)
+        public override void Update(GameTime gameTime, Environment E, Camera2D camera)
         {
 
             previousMouse = currentMouse;
@@ -297,7 +311,15 @@ namespace ProjectilePlayground.Content.controls
             previousKey = currentKey;
             currentKey = Keyboard.GetState();
 
-            var mouseRect = new VerticesRectangle(new Vector2(currentMouse.X, currentMouse.Y), 1, 1, 1);
+            Vector2 scaledOffset = new(currentMouse.X, currentMouse.Y);
+
+            if (isCannon)
+            {
+                
+                scaledOffset = Vector2.Transform(scaledOffset, camera.camInverseMatrix);
+            }
+
+            var mouseRect = new VerticesRectangle(scaledOffset, 1, 1, 1);
 
             //var mouseRect = new Rectangle(currentMouse.Position.X, currentMouse.Position.Y, 1, 1);
 
@@ -305,7 +327,7 @@ namespace ProjectilePlayground.Content.controls
 
             // checking if mouse is hovering and or clicking the button
 
-            if (Collisions.IntersectingPolygons(mouseRect.vertices, CollisionRect.vertices) || isDragging)
+            if (Collisions.IntersectingPolygons(mouseRect.Center ,mouseRect.vertices, CollisionRect.Center,CollisionRect.vertices, out Vector2 normal, out float depth) || isDragging)
             {
                 isHovering = true;
 
@@ -314,7 +336,11 @@ namespace ProjectilePlayground.Content.controls
                     
                     // used the change in postion between the current and previous mousestates to determine how far to move the scroller
                     if (!isCannon)
+                    {
                         position = ScrollerMovement(position);
+                        _collisionRect = new VerticesRectangle(position, texture.Width, texture.Height, scale);
+                        
+                    }
                     isDragging = true;
                 }
 
@@ -325,8 +351,9 @@ namespace ProjectilePlayground.Content.controls
                     Click?.Invoke(this, new SliderClickEventArgs(property, index));
                     isDragging = false;
                     if (isCannon)
-                    {
-                        _collisionRect = VerticesRectangle.HandleRotations(CollisionRect, overallChangeInRotation, new Vector2(0,25)+position, isClockwise);
+                    { 
+                          
+                        _collisionRect = VerticesRectangle.GetTransformedRectangle(CollisionRect, overallChangeInRotation, new Vector2(0,0), new Vector2(0, 10) + position, 1f);
                         CollisionRect = _collisionRect;
                         overallChangeInRotation = 0f;
                     }
@@ -334,7 +361,7 @@ namespace ProjectilePlayground.Content.controls
             }
 
             // for text inputs
-            if (Collisions.IntersectingPolygons(mouseRect.vertices, PropertyRect.vertices) && (currentMouse.LeftButton == ButtonState.Released) && (previousMouse.LeftButton == ButtonState.Pressed) && !isHovering)
+            if (Collisions.IntersectingPolygons(mouseRect.Center ,mouseRect.vertices, PropertyRect.Center,PropertyRect.vertices, out Vector2 normal2, out float depth2) && (currentMouse.LeftButton == ButtonState.Released) && (previousMouse.LeftButton == ButtonState.Pressed) && !isHovering)
             {
                 isTexting = true;
                 var x = (CollisionRect.X + (CollisionRect.Width / 2)) - (font.MeasureString(text_scroller).X / 2);
@@ -349,14 +376,22 @@ namespace ProjectilePlayground.Content.controls
                 {
                     isTexting = false;
                     // need to check if value is appropriate
-                    float value = Convert.ToSingle(text_scroller);
-                   
-                    if (value <= maxValue)
-                    {
 
-                        PropertyPlacement(value);
-                        property = value;
-                        Click?.Invoke(this, new SliderClickEventArgs(property, index));
+                    try
+                    {
+                        float value = Convert.ToSingle(text_scroller);
+
+                        if (value <= maxValue && value >= minValue)
+                        {
+
+                            PropertyPlacement(value);
+                            property = value;
+                            Click?.Invoke(this, new SliderClickEventArgs(property, index));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.ToString());
                     }
                 }
             }
@@ -364,7 +399,7 @@ namespace ProjectilePlayground.Content.controls
             if (isTexting)
             {
                 
-                textBox.Update(gameTime, E);
+                textBox.Update(gameTime, E, camera);
                 HandleInput();
             }
             else
@@ -377,15 +412,10 @@ namespace ProjectilePlayground.Content.controls
                 isTexting = false;
             }
 
-            
             if (!isCannon)
-            {
-                _collisionRect = new VerticesRectangle(position, texture.Width, texture.Height, scale);
-            }
-            
-            CollisionRect = _collisionRect;
+                CollisionRect = _collisionRect;
 
-            base.Update(gameTime, E);
+            base.Update(gameTime, E, camera);
         } 
     }
 }

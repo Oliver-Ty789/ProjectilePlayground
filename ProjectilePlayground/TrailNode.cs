@@ -20,6 +20,8 @@ namespace ProjectilePlayground
         private bool isHovering;
         private Color colour;
         private VerticesRectangle _collisionRect;
+        private Texture2D boxTexture;
+        private Vector2 scaledDrawingOffset;
 
         // public
         public float height;
@@ -27,7 +29,7 @@ namespace ProjectilePlayground
         public float range;
         public bool isYellow;
 
-        public TrailNode(SpriteFont font, float height, float time, float range, Texture2D texture, Vector2 position, float scale, bool isYellow) : base(texture, position, scale)
+        public TrailNode(SpriteFont font, float height, float time, float range, Texture2D texture, Vector2 position, float scale, bool isYellow, Texture2D boxTexture) : base(texture, position, scale)
         {
             this.font = font;
             this.height = height;
@@ -37,9 +39,11 @@ namespace ProjectilePlayground
             this.penColour = Color.Black;
             _collisionRect = new VerticesRectangle(position, texture.Width, texture.Height, scale);
             CollisionRect = _collisionRect;
+            this.boxTexture = boxTexture;
+            
         }
 
-        public override void Draw(Microsoft.Xna.Framework.GameTime gameTime, SpriteBatch spriteBatch)
+        public void Draw(Microsoft.Xna.Framework.GameTime gameTime, SpriteBatch spriteBatch, SpriteBatch spriteBatchUI)
         {
             if (isYellow)
             {
@@ -53,17 +57,28 @@ namespace ProjectilePlayground
             if (isHovering) // display properties as well
             {
                 colour = Color.Gray;
+
+
+                // for the background box
+                var xbox = scaledDrawingOffset.X - 120;
+                var ybox = scaledDrawingOffset.Y - 70;
+                spriteBatchUI.Draw(boxTexture, new Vector2(xbox, ybox), Color.White);
+
+
                 spriteBatch.Draw(texture, DrawingRect, colour);
-                var x = position.X - 90;
+                var x = scaledDrawingOffset.X - 90;
                 // height
-                var yheight = position.Y - 30;
-                spriteBatch.DrawString(font, $"height: {Math.Round(height, 2)}m", new Vector2(x, yheight), penColour);
+                var yheight = scaledDrawingOffset.Y - 30;
+                spriteBatchUI.DrawString(font, $"height: {Math.Round(height, 2)}m", new Vector2(x, yheight), penColour);
                 // time
-                var ytime = position.Y;
-                spriteBatch.DrawString(font, $"time: {Math.Round(time, 2)}s", new Vector2(x, ytime), penColour);
+                var ytime = scaledDrawingOffset.Y;
+                spriteBatchUI.DrawString(font, $"time: {Math.Round(time, 2)}s", new Vector2(x, ytime), penColour);
                 // range
-                var yrange = position.Y + 30;
-                spriteBatch.DrawString(font, $"range: {Math.Round(range, 2)}m", new Vector2(x, yrange), penColour);
+                var yrange = scaledDrawingOffset.Y + 30;
+                spriteBatchUI.DrawString(font, $"range: {Math.Round(range, 2)}m", new Vector2(x, yrange), penColour);
+
+                
+
             }
 
             else
@@ -73,16 +88,24 @@ namespace ProjectilePlayground
 
             
 
-                base.Draw(gameTime, spriteBatch);
+               
         }
 
-        public override void Update(Microsoft.Xna.Framework.GameTime gameTime, Environment environment)
+        public override void Update(Microsoft.Xna.Framework.GameTime gameTime, Environment environment, Camera2D camera)
         {
 
             currentMouse = Mouse.GetState();
-            var mouseRect = new VerticesRectangle(new Vector2(currentMouse.X, currentMouse.Y), 1, 1, 1);
 
-            if (Collisions.IntersectingPolygons(mouseRect.vertices, CollisionRect.vertices))
+            Vector2 scaledMouseOffset = new(currentMouse.X, currentMouse.Y);
+            scaledMouseOffset = Vector2.Transform(scaledMouseOffset, camera.camInverseMatrix);
+
+            scaledDrawingOffset = position;
+            scaledDrawingOffset = Vector2.Transform(scaledDrawingOffset, camera.GetCameraScaleMatrix());
+
+
+            var mouseRect = new VerticesRectangle(scaledMouseOffset, 1, 1, 1);
+
+            if (Collisions.IntersectingPolygons(mouseRect.Center, mouseRect.vertices, CollisionRect.Center, CollisionRect.vertices, out Vector2 normal, out float depth))
             {
                 isHovering = true;
             }
@@ -91,7 +114,7 @@ namespace ProjectilePlayground
                 isHovering = false;
             }
 
-                base.Update(gameTime, environment);
+                base.Update(gameTime, environment, camera);
         }
     }
 }

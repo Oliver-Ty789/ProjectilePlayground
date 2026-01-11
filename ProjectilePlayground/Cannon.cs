@@ -38,41 +38,53 @@ namespace ProjectilePlayground
             var differenceMouseMag = MathF.Sqrt(MathF.Pow(differenceMousePos.X, 2) + MathF.Pow(differenceMousePos.Y, 2));
 
             var changeInRotation = MathF.Acos((MathF.Pow(offsetCurrentMouseMag, 2) + MathF.Pow(offsetPreviousMouseMag, 2) - MathF.Pow(differenceMouseMag, 2)) / (2 * offsetCurrentMouseMag * offsetPreviousMouseMag));
-            overallChangeInRotation += changeInRotation;
             
 
             if (offsetCurrentMousePos.Y > offsetPreviousMousePos.Y) // make sure cannon turns with mouse
             {
                 rotationR += changeInRotation;
+                overallChangeInRotation += changeInRotation;
                 isClockwise = true;
             } 
                
             else
             {
                 rotationR -= changeInRotation;
+                overallChangeInRotation -= changeInRotation;
                 isClockwise = false;
             }
               
             if (rotationR < -MathF.PI/2)
             {
                 rotationR = -MathF.PI / 2;
+                if (isClockwise) // make sure overallchangeinrotation doesn't increase if sprite isn't rotating
+                    overallChangeInRotation -= changeInRotation;
+                else
+                    overallChangeInRotation += changeInRotation;
                 return;
             }
             if (rotationR > 0)
             {
                 rotationR = 0;
+                if (isClockwise)
+                    overallChangeInRotation -= changeInRotation;
+                else
+                    overallChangeInRotation += changeInRotation;
                 return;
             }
-
-            CollisionRect = _collisionRect;
+            
         }
 
         public override void PropertyPlacement(float value)
         {
             // just change rotation
-            rotationR = -(value * (MathF.PI/180));
-            _collisionRect = VerticesRectangle.HandleRotations(CollisionRect, rotationR, textureOrigin + position, true);
+            rotationR = -(value * (MathF.PI/180)); 
+            // edit start pos for more accurate results
+            _collisionRect = new VerticesRectangle(new Vector2( position.X - 5, position.Y -35), texture.Width, texture.Height, scale);
             CollisionRect = _collisionRect;
+            _collisionRect = VerticesRectangle.GetTransformedRectangle(CollisionRect, rotationR, new Vector2(0,0),textureOrigin + position + rectOffset, 1f);
+            CollisionRect = _collisionRect;
+            
         }
 
         public override float FindProperty()
@@ -104,18 +116,27 @@ namespace ProjectilePlayground
 
             if (isTexting)
                 textBox.Draw(gameTime, spriteBatch);
+
+            //for (int i = 0; i < CollisionRect.vertices.Length; i++) // for debugging collision rectangle
+            //{
+            //    var point1 = CollisionRect.vertices[i];
+            //    var point2 = CollisionRect.vertices[(i + 1)%4];
+            //    Primitives2D.DrawLine(spriteBatch, point1, point2, Color.White);
+            //}
+            
         }
 
 
 
 
-        public override void Update(GameTime gameTime, Environment environment)
+        public override void Update(GameTime gameTime, Environment environment, Camera2D camera)
         {
             if (isDragging)
             {
                 CannonOrientation();
             }
-            base.Update(gameTime, environment);
+            
+            base.Update(gameTime, environment, camera);
         }
     }
 }

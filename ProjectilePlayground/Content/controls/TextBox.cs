@@ -79,14 +79,14 @@ namespace ProjectilePlayground.Content.controls
                 spriteBatch.Draw(texture, cursorRect, Color.White);
             }
 
-            base.Draw(gameTime, spriteBatch);
+            
         }
 
-        public override void Update(GameTime gameTime, Environment environment)
+        public override void Update(GameTime gameTime, Environment environment, Camera2D camera)
         {
             // increments by 60 every second
             animationTime++;
-            base.Update(gameTime, environment);
+            base.Update(gameTime, environment, camera);
         }
     }
 }
